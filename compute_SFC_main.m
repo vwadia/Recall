@@ -37,7 +37,7 @@ taskCodePath = [boxPath filesep 'recallTaskVarun']; % more events described here
 addpath(taskCodePath); setTTLCodes;
 addpath([diskPath filesep 'Code' filesep 'SFCpackage' filesep 'helpers']);
 addpath([diskPath filesep 'Code' filesep 'SFCpackage' filesep 'SFCieeg']);
-addpath(genpath('osortTextUI'));
+addpath(genpath([diskPath filesep 'Code' filesep 'osortTextUI']));
 
 
 %% Define patients, areas, and channel list 
@@ -45,8 +45,8 @@ addpath(genpath('osortTextUI'));
 patientIDs = {'P76CS', 'P79CS', 'P80CS'};
 cellArea = 'RFFA'; lfpArea = 'RH';
 
-% condition_1 = 'Screening'; cds = ['ScreeningImagination'];
-condition_1 = 'Encoding'; cds = ['EncodingImagination'];
+condition_1 = 'Screening'; cds = ['ScreeningImagination'];
+% condition_1 = 'Encoding'; cds = ['EncodingImagination'];
 condition_2 = 'Imagination';
 
 % dirID = Utilities.LFP.defineChannelListSFC(patientIDs, cds, 'Cell');
@@ -83,20 +83,35 @@ for sess = 1:length(dirID)
         [lfDat, spikDat] = Utilities.LFP.SFCConfig(params, condition);
         
         % grab data - including choosing valid data
-        [data_lfp, data_spike, params] = Utilities.LFP.ExtractDataSFC(lfDat, spikDat, params, sessDir, condition);
+        [data_lfp{sess, cond}, data_spike{sess, cond}, params] = Utilities.LFP.ExtractDataSFC(lfDat, spikDat, params, sessDir, condition);
         
         % compute SFC for valid cell/channel pairs
         n_freq = params.high_freq - params.low_freq;
-        
-        % compute ppc for that session and condition
-        if ~isempty(data_lfp)
-            [ppc{sess, cond}, frq, ppc_boot{sess, cond}] = Recall.compute_ppc(data_lfp, data_spike, params.low_freq, params.high_freq, n_freq, params.scale, params.FsDown, params.run_boot);
-        end
-        
-        
+   
     end
 end
 toc
+ 
+
+%%
+for sess = 1:length(dirID)-1
+        
+        
+    if strcmp(params.balance_spikes, 'true')
+        for n = 1:200
+            
+            [d1, d2] = Utilities.LFP.balanceSpikesSFC(data_spike{sess, 1}, data_spike{sess, 2});
+            
+            assert(isequal(sum(d1(:)), sum(d2(:))));
+            
+            %             % compute ppc for that session and condition
+            %             if ~isempty(data_lfp)
+            %                 [ppc{sess, cond}, frq, ppc_boot{sess, cond}] = Recall.compute_ppc(data_lfp{sess, cond}, data_spike{sess, cond}, params.low_freq, params.high_freq, n_freq, params.scale, params.FsDown, params.run_boot);
+            %             end
+        end
+    end
+    
+end
 
 %% Save 
 if strcmp(params.scale, 'log')
