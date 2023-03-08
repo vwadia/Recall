@@ -11,4 +11,5 @@ outDir = [diskPath filesep 'Recall_Task' filesep 'ppc_log' filesep 'Data'];
 if ~exist(outDir, 'dir')
     mkdir(outDir)
 end
-save([outDir filesep ['rng_worker_' num2str(cpu_nr)]], 'r', 'testInput');
+fnum = sprintf('%03d', cpu_nr);
+save([outDir filesep ['rng_worker_' fnum]], 'r', 'testInput');
