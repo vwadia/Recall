@@ -39,6 +39,7 @@ addpath([diskPath filesep 'Code' filesep 'SFCpackage' filesep 'helpers']);
 addpath([diskPath filesep 'Code' filesep 'SFCpackage' filesep 'SFCieeg']);
 addpath(genpath([diskPath filesep 'Code' filesep 'osortTextUI']));
 
+saveDataOnly = 1; % for cluster runs
 
 %% Define patients, areas, and channel list 
 
@@ -49,10 +50,14 @@ condition_1 = 'Screening'; cds = ['ScreeningImagination'];
 % condition_1 = 'Encoding'; cds = ['EncodingImagination'];
 condition_2 = 'Imagination';
 
-% dirID = Utilities.LFP.defineChannelListSFC(patientIDs, cds, 'Cell');
-dirID = Utilities.LFP.defineChannelListSFC(patientIDs, cds, 'NoNoise');
+% chanType = 'Cell';;
+chanType = 'NoNoise';
+dirID = Utilities.LFP.defineChannelListSFC(patientIDs, cds, chanType);
 
 %% Execute
+% only collecting spike data takes ~1 min
+% collecting spike and lfp data takes ~15 min
+% collecting and computing with boot takes ~30min
 
 tic   
 for sess = 1:length(dirID)
@@ -68,6 +73,7 @@ for sess = 1:length(dirID)
     % read in session IDs and assign conditions etc.
     [params] = Utilities.LFP.defineInputParamsSFC(cellArea, lfpArea, lfpChans, sessDir{1}, 'log', 'sigRamp', diskPath);
     
+    params.chanType = chanType;
     for cond = 1:2
         
         % note the directories are different for screening vs Im and Encoding vs Im
@@ -87,39 +93,37 @@ for sess = 1:length(dirID)
         
         % compute SFC for valid cell/channel pairs
         n_freq = params.high_freq - params.low_freq;
+        
+        % compute ppc for that session and condition
+        if ~isempty(data_lfp) && ~saveDataOnly
+            [ppc{sess, cond}, frq, ppc_boot{sess, cond}] = Recall.compute_ppc(data_lfp{sess, cond}, data_spike{sess, cond}, params.low_freq, params.high_freq, n_freq, params.scale, params.FsDown, params.run_boot);
+        end
    
     end
-end
-toc
- 
-
-%%
-for sess = 1:length(dirID)-1
-        
-        
-    if strcmp(params.balance_spikes, 'true')
-        for n = 1:200
-            
-            [d1, d2] = Utilities.LFP.balanceSpikesSFC(data_spike{sess, 1}, data_spike{sess, 2});
-            
-            assert(isequal(sum(d1(:)), sum(d2(:))));
-            
-            %             % compute ppc for that session and condition
-            %             if ~isempty(data_lfp)
-            %                 [ppc{sess, cond}, frq, ppc_boot{sess, cond}] = Recall.compute_ppc(data_lfp{sess, cond}, data_spike{sess, cond}, params.low_freq, params.high_freq, n_freq, params.scale, params.FsDown, params.run_boot);
-            %             end
-        end
-    end
+    
+    
     
 end
+toc
 
-%% Save 
-if strcmp(params.scale, 'log')
-    save([diskPath filesep 'Recall_task' filesep 'ppc_log' filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_cellChans']], 'ppc', 'ppc_boot', 'frq', 'params');
-elseif strcmp(params.scale, 'linear')
-    save([diskPath filesep 'Recall_task' filesep 'ppc_linear' filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_cellChans']], 'ppc', 'ppc_boot', 'frq', 'params');
+%% save 
+
+if saveDataOnly
+    outPath = [diskPath filesep 'Recall_task' filesep 'ppc_' params.scale filesep 'Data'];
+    if ~exist(outPath, 'dir')
+        mkdir(outPath)
+    end
+    % save data
+    filename = [outPath filesep ['data_SFC_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds '_' params.chanType]];
+    save(filename, 'data_spike', 'data_lfp', 'params');
+else
+    outPath = [diskPath filesep 'Recall_task' filesep 'ppc_' params.scale ];
+    if ~exist(outPath, 'dir')
+        mkdir(outPath)
+    end
+    filename = [outPath filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_' params.chanType]];
+    save(filename, 'ppc', 'ppc_boot', 'frq', 'params');
 end
-
 %% Go to compute_SFC_Stats or plot_SFC_main 
 
 

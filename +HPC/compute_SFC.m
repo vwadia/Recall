@@ -1,80 +1,79 @@
-% main SFC script
+% main SFC function
 
-% modular versio nto run on HPC
+% modular version to run on HPC
+function compute_SFC(cpu_nr, n_iter, cellArea, lfpArea, cds, chanType, cellType)
 
-setPaths_sfc_hpc
+Recall.HPC.setPaths_sfc_hpc
+if nargin == 6, cellType = []; end
+% load in data for both conditions - should have data_spike_c1, data_lfp_c1, data_spike_c2, data_lfp_c2, params
+% if data extraction was run manually then just data_lfp, data_spike, and params
+% load('data_for_sess_' num2str(nr) '_cond1');
+% load('data_for_sess_' num2str(nr) '_cond2');
 
+if strcmp(cellArea(2:end), 'FFA') && isempty(cellType)
+   cellType = 'sigRamp';
+end
 
-%% Execute
+fname = [diskPath filesep 'Recall_Task' filesep 'ppc_log' filesep 'Data' filesep ['data_SFC_' cellArea 'Cell_' lfpArea 'LFP' '_' cellType '_' cds '_' chanType]];
 
-tic   
-for sess = 1:length(dirID)
-    
-    if sess ~= 1
-        params = rmfield(params, 'valid_cell');
-    end
-    
-    sessDir = dirID(sess, :);
-    
-    [lfpChans] = Utilities.LFP.defineLFPChannelsSFC(sessDir, lfpArea);
-    
-    % read in session IDs and assign conditions etc.
-    [params] = Utilities.LFP.defineInputParamsSFC(cellArea, lfpArea, lfpChans, sessDir{1}, 'log', 'sigRamp', diskPath);
-    
-    for cond = 1:2
-        
-        % note the directories are different for screening vs Im and Encoding vs Im
-        if cond == 1
-            condition = condition_1;
+% if the matfile actually exists
+assert(exist([fname '.mat']) == 2, 'File not found - check name');
+load(fname)
+
+n_freq = params.high_freq - params.low_freq;
+for sess = 1:size(data_lfp, 1)
+    if ~isempty(data_lfp{sess, 1}) && ~isempty(data_lfp{sess, 2})
+        if strcmp(params.balance_spikes, 'true')
             
-        elseif cond == 2
-            condition = condition_2;
+            for n = 1:n_iter % n_desiredIter/n_cores assigned
+                
+                [d1, d2, resampledCond] = Utilities.LFP.balanceSpikesSFC(data_spike{sess, 1}, data_spike{sess, 2});
+                assert(isequal(sum(d1(:)), sum(d2(:))));
+                
+                
+                % compute ppc for that session and condition
+                if resampledCond == 1
+                    downSampledData_spike = d1;
+                    unchangedData_spike = d2;
+                    unchangedCond = 2;
+                elseif resampledCond == 2
+                    downSampledData_spike = d2;
+                    unchangedData_spike = d1;
+                    unchangedCond = 1;
+                end
+                
+                if ~isempty(data_lfp{sess, resampledCond})
+                    [ppc{sess, resampledCond}(:, :, :, n), frq, ppc_boot{sess, resampledCond}(:, :, :, :, n)]...
+                        = Recall.compute_ppc(data_lfp{sess, resampledCond}, downSampledData_spike, params.low_freq, params.high_freq, n_freq, params.scale, params.FsDown, params.run_boot);
+                end
+            end
             
+            % run the unchanged condition just once
+            if ~isempty(data_lfp{sess, unchangedCond})
+                [ppc{sess, unchangedCond}, frq, ppc_boot{sess, unchangedCond}]...
+                    = Recall.compute_ppc(data_lfp{sess, unchangedCond}, unchangedData_spike, params.low_freq, params.high_freq, n_freq, params.scale, params.FsDown, params.run_boot);
+            end
+        else
+            for cond = 1:2
+                % run the unchanged condition just once
+                if ~isempty(data_lfp{sess, unchangedCond})
+                    [ppc{sess, cond}, frq, ppc_boot{sess, cond}]...
+                        = Recall.compute_ppc(data_lfp{sess, cond}, data_spike{sess, cond}, params.low_freq, params.high_freq, n_freq, params.scale, params.FsDown, params.run_boot);
+                end
+            end
         end
-     
-        % these structs contain time windows for lfp and spikes
-        % other logistical things needed for data extraction
-        [lfDat, spikDat] = Utilities.LFP.SFCConfig(params, condition);
-        
-        % grab data - including choosing valid data
-        [data_lfp{sess, cond}, data_spike{sess, cond}, params] = Utilities.LFP.ExtractDataSFC(lfDat, spikDat, params, sessDir, condition);
-        
-        % compute SFC for valid cell/channel pairs
-        n_freq = params.high_freq - params.low_freq;
-   
     end
 end
-toc
- 
 
-%%
-for sess = 1:length(dirID)-1
-        
-        
-    if strcmp(params.balance_spikes, 'true')
-        for n = 1:200
-            
-            [d1, d2] = Utilities.LFP.balanceSpikesSFC(data_spike{sess, 1}, data_spike{sess, 2});
-            
-            assert(isequal(sum(d1(:)), sum(d2(:))));
-            
-            %             % compute ppc for that session and condition
-            %             if ~isempty(data_lfp)
-            %                 [ppc{sess, cond}, frq, ppc_boot{sess, cond}] = Recall.compute_ppc(data_lfp{sess, cond}, data_spike{sess, cond}, params.low_freq, params.high_freq, n_freq, params.scale, params.FsDown, params.run_boot);
-            %             end
-        end
-    end
-    
+% Save 
+outPath = [diskPath filesep 'Recall_task' filesep 'ppc_' params.scale];
+if ~exist(outPath, 'dir')
+    mkdir(outPath)
 end
 
-%% Save 
-if strcmp(params.scale, 'log')
-    save([diskPath filesep 'Recall_task' filesep 'ppc_log' filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_cellChans']], 'ppc', 'ppc_boot', 'frq', 'params');
-elseif strcmp(params.scale, 'linear')
-    save([diskPath filesep 'Recall_task' filesep 'ppc_linear' filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_cellChans']], 'ppc', 'ppc_boot', 'frq', 'params');
+filename = [outPath filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_' chanType]];
+save(filename, 'ppc', 'ppc_boot', 'frq', 'params', 'fname');
+
+
+
 end
-
-%% Go to compute_SFC_Stats or plot_SFC_main 
-
-
-
