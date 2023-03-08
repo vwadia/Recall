@@ -44,15 +44,15 @@ saveDataOnly = 1; % for cluster runs
 %% Define patients, areas, and channel list 
 
 patientIDs = {'P76CS', 'P79CS', 'P80CS'};
-% cellArea = 'RFFA'; lfpArea = 'RH';
-cellArea = 'RH'; lfpArea = 'RFFA';
+cellArea = 'LFFA'; lfpArea = 'LH';
+% cellArea = 'LH'; lfpArea = 'LFFA';
 
 condition_1 = 'Screening'; cds = ['ScreeningImagination'];
 % condition_1 = 'Encoding'; cds = ['EncodingImagination'];
 condition_2 = 'Imagination';
 
-% chanType = 'Cell';;
-chanType = 'NoNoise';
+chanType = 'Cell';;
+% chanType = 'NoNoise';
 dirID = Utilities.LFP.defineChannelListSFC(patientIDs, cds, chanType);
 
 %% Execute
