@@ -54,6 +54,7 @@ for sess = 1:size(data_lfp, 1)
                     = Recall.compute_ppc(data_lfp{sess, unchangedCond}, unchangedData_spike, params.low_freq, params.high_freq, n_freq, params.scale, params.FsDown, params.run_boot);
             end
         else
+            n_iter = 0;
             for cond = 1:2
                 % run the unchanged condition just once
                 if ~isempty(data_lfp{sess, unchangedCond})
@@ -67,11 +68,13 @@ end
 
 % Save 
 outPath = [diskPath filesep 'Recall_task' filesep 'ppc_' params.scale];
+outDir = [outPath filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_' chanType]];
 if ~exist(outPath, 'dir')
     mkdir(outPath)
 end
 
-filename = [outPath filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_' chanType]];
+filename = [outPath filesep ['ppc_' num2str(n_iter) '_subsampleIterations_worker_' num2str(cpu_nr)]];
+% disp(filename)
 save(filename, 'ppc', 'ppc_boot', 'frq', 'params', 'fname');
 
 
