@@ -3,6 +3,7 @@ function rng_test(cpu_nr, testInput)
 % on cluster and a first slurm script
 % vwadia March2023
 Recall.HPC.setPaths_sfc_hpc;
+rng('shuffle')
 
 r = randi(100, [5 1]);
 
