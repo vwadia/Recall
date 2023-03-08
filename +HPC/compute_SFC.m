@@ -73,7 +73,8 @@ if ~exist(outPath, 'dir')
     mkdir(outPath)
 end
 
-filename = [outPath filesep ['ppc_' num2str(n_iter) '_subsampleIterations_worker_' num2str(cpu_nr)]];
+fnum = sprintf('%03d', cpu_nr);
+filename = [outPath filesep ['ppc_' num2str(n_iter) '_subsampleIterations_worker_' fnum]];
 % disp(filename)
 save(filename, 'ppc', 'ppc_boot', 'frq', 'params', 'fname');
 
