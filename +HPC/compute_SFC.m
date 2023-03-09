@@ -15,6 +15,12 @@ if strcmp(cellArea(2:end), 'FFA') && isempty(cellType)
    cellType = 'sigRamp';
 end
 
+if strcmp(cds, 'ScreeningImagination')
+    shortcds = 'SI';
+elseif strcmp(cds, 'EncodingImagination')
+    shortcds = 'EI';
+end
+
 fname = [diskPath filesep 'Recall_Task' filesep 'ppc_log' filesep 'Data' filesep ['data_SFC_' cellArea 'Cell_' lfpArea 'LFP' '_' cellType '_' cds '_' chanType]];
 
 % if the matfile actually exists
@@ -69,13 +75,13 @@ end
 
 % Save 
 outPath = [diskPath filesep 'Recall_Task' filesep 'ppc_' params.scale];
-outDir = [outPath filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_' chanType]];
-if ~exist(outPath, 'dir')
-    mkdir(outPath)
+outDir = [outPath filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' shortcds  '_' chanType]];
+if ~exist(outDir, 'dir')
+    mkdir(outDir)
 end
 
 fnum = sprintf('%03d', cpu_nr);
-filename = [outPath filesep ['ppc_' params.cellArea '_' params.lfpArea '_' cds '_' chanType '_' num2str(n_iter) '_subsampleIterations_worker_' fnum]];
+filename = [outDir filesep ['ppc_' params.cellArea '_' params.lfpArea '_' shortcds '_' chanType '_subsampleIterations_' num2str(n_iter) '_worker_' fnum]];
 % disp(filename)
 save(filename, 'ppc', 'ppc_boot', 'frq', 'params', 'fname');
 
