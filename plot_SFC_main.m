@@ -11,15 +11,40 @@ task = 'Recall_Task';
 % scale = 'ppc_linear';
 scale = 'ppc_log';
 
-% if strcmp(scale, 'ppc_linear')
-%     frq = linspace(2, 100, 98);
-%     load([diskPath filesep task filesep scale filesep 'ppc_RITCellRHippLFP_allCells.mat']); noSess2 = 1; Side = 'RFFA';
-% 
-% elseif strcmp(scale, 'ppc_log')
-% %     load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_EncodingImagination_cellChans']); Side = 'RFFA';
-%     load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_cellChans']); Side = 'RFFA';
-%     
-% end
+HPC = true; balanced = true;
+addPVals = true;
+if HPC && balanced
+        datPath = [diskPath filesep task filesep scale filesep 'Data' filesep 'HPCOutput' filesep 'combined'];
+%         fn = 'ppc_LFFACell_LHLFP_sigRamp_ScreeningImagination_Cell_combined';
+%         fn = 'ppc_LHCell_LFFALFP_sigRamp_ScreeningImagination_Cell_combined';
+%         fn = 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_Cell_combined';
+        fn = 'ppc_RHCell_RFFALFP_sigRamp_ScreeningImagination_Cell_combined';
+
+
+        load([datPath filesep fn]);
+        
+        for nr = 1:size(ppc, 1)
+            if ~isempty(ppc{nr, 1})
+                if ndims(ppc{nr, 1}) > ndims(ppc{nr, 2})
+                    toAverage = 1;
+                else
+                    toAverage = 2;
+                end
+            
+                ppc{nr, toAverage} = mean(ppc{nr, toAverage}, 4);
+            end
+        end
+else
+    if strcmp(scale, 'ppc_linear')
+        frq = linspace(2, 100, 98);
+        load([diskPath filesep task filesep scale filesep 'ppc_RITCellRHippLFP_allCells.mat']); noSess2 = 1; Side = 'RFFA';
+        
+    elseif strcmp(scale, 'ppc_log')
+        %     load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_EncodingImagination_cellChans']); Side = 'RFFA';
+        load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_cellChans']); Side = 'RFFA';
+        
+    end
+end
 
 cols = Utilities.distinguishable_colors(2);
 avPPC_Sc = [];
@@ -50,6 +75,68 @@ end
 % stdErr_Im = std(avPPC_Im)/sqrt(length(avPPC_Im));
 % ------------------------------------------------------------------------
 
+
+if addPVals
+    
+    ppc_C1_all = [];
+    ppc_C2_all = [];
+    for session = 1:length(ppc)
+        
+        if ~isempty(ppc{session})
+            
+            ppc_C1 = ppc{session, 1};
+            n_neurons_C1 = size(ppc_C1, 1);
+            n_channels_C1 = size(ppc_C1, 2);
+            n_freq_C1 = size(ppc_C1, 3);
+            
+            ppc_C1 = reshape(ppc_C1, [n_neurons_C1*n_channels_C1 n_freq_C1]);
+            
+            ppc_C2 = ppc{session, 2};
+            n_neurons_C2 = size(ppc_C2, 1);
+            n_channels_C2 = size(ppc_C2, 2);
+            n_freq_C2 = size(ppc_C2, 3);
+            
+            ppc_C2 = reshape(ppc_C2, [n_neurons_C2*n_channels_C2 n_freq_C2]);
+            
+            frqs = frq;
+            ppc_C1_all = [ppc_C1_all; ppc_C1];
+            ppc_C2_all = [ppc_C2_all; ppc_C2];
+        end
+        
+    end
+    
+    for i = 1:n_freq_C1
+        
+        [~, pvals(i)] = ttest(ppc_C1_all(:, i), ppc_C2_all(:, i));
+        
+    end
+    
+    sumFig = figure;
+    h1 = subplot(2, 1, 1);
+    
+    hold on
+    Utilities.stdshade5(avPPC_Sc', 0.1, cols(1, :), frq');
+    Utilities.stdshade5(avPPC_Im', 0.1, cols(2, :), frq');
+%     xlim([params.low_freq 40])
+    set(gca, 'FontSize', 9, 'FontWeight', 'bold')
+
+    h2 = subplot(2, 1, 2);
+%     hold on
+    semilogy(frq, pvals, 'Color', [0 0.4 0], 'LineWidth', 2);
+    yline(0.05/97, 'LineWidth', 1.5)
+    ylim([0 0.9])
+%     xlim([params.low_freq 40])
+
+    linkaxes([h1, h2], 'x')
+    sgt = sgtitle([params.cellArea ' neuron to ' params.lfpArea ' micro-lfp']);
+    sgt.FontWeight = 'bold';
+
+    set(gca, 'FontSize', 9, 'FontWeight', 'bold')
+
+    filename = [datPath filesep [params.cellArea 'Cell_' params.lfpArea '_micro-lfp_wPVals']];
+    print(sumFig, filename, '-dpng', '-r0')
+
+else
 sumFig = figure;
 % plot(f_Sc{1}, avPPC_Sc, 'LineWidth', 2)
 % plot(f_Im{1}, avPPC_Im, 'LineWidth', 2)
@@ -61,22 +148,16 @@ sumFig = figure;
 %     % plotting this with shaded error is a pain
 %     s1 = semilogx(frq, nanmean(avPPC_Sc, 2), frq, nanmean(avPPC_Im, 2), 'LineWidth', 2);
 % end
-if strcmp(Side, 'RFFA')
-    title('PPC RIT cells - RH lfp')
+    title([params.cellArea ' neuron to ' params.lfpArea ' micro-lfp'])
 %     ylim([0 10e-4])
-
-elseif strcmp(Side, 'LFFA')
-    title('PPC LIT cells - LH lfp')
-%     ylim([0 15e-4])
-
-end
-filename = [diskPath filesep task filesep scale filesep 'PPC_' Side 'Cell_' Side(1) 'HLFP_AllSessions_allCells_IncSess2'];
+% xlim([params.low_freq 40])
+filename = [datPath filesep [params.cellArea 'Cell_' params.lfpArea '_micro-lfp']];
 % filename = [diskPath filesep task filesep 'PPC_' Side 'Cell_' Side(1) 'HLFP_AllSessions_AllResp'];
 legend('BottomUp', 'TopDown');
 set(gca, 'FontSize', 14, 'FontWeight', 'bold')
-% print(sumFig, filename, '-dpng', '-r0')
+print(sumFig, filename, '-dpng', '-r0')
 
-
+end
 %% per session
 setDiskPaths
 task = 'Recall_Task';

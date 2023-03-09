@@ -7,18 +7,44 @@ task = 'Recall_Task';
 % scale = 'ppc_linear';
 scale = 'ppc_log';
 
-if strcmp(scale, 'ppc_linear')
-    frq = linspace(2, 100, 98);
-    load([diskPath filesep task filesep scale filesep 'ppc_RITCellRHippLFP_allCells.mat']); noSess2 = 1; Side = 'RFFA';
+HPC = true; balanced = true;
 
-elseif strcmp(scale, 'ppc_log')
-%     load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_EncodingImagination_cellChans']); Side = 'RFFA';
-    load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_cellChans']); Side = 'RFFA';
+if HPC && balanced
+    datPath = [diskPath filesep task filesep scale filesep 'Data' filesep 'HPCOutput' filesep 'combined'];
+    %         fn = 'ppc_LFFACell_LHLFP_sigRamp_ScreeningImagination_Cell_combined';
+        fn = 'ppc_LHCell_LFFALFP_sigRamp_ScreeningImagination_Cell_combined';
+    %         fn = 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_Cell_combined';
+%     fn = 'ppc_RHCell_RFFALFP_sigRamp_ScreeningImagination_Cell_combined';
     
+    
+    load([datPath filesep fn]);
+    
+%     for nr = 1:size(ppc, 1)
+%         if ~isempty(ppc{nr, 1})
+%             if ndims(ppc{nr, 1}) > ndims(ppc{nr, 2})
+%                 toAverage = 1;
+%             else
+%                 toAverage = 2;
+%             end
+%             
+%             ppc{nr, toAverage} = mean(ppc{nr, toAverage}, 4);
+%         end
+%     end
+else
+    
+    if strcmp(scale, 'ppc_linear')
+        frq = linspace(2, 100, 98);
+        load([diskPath filesep task filesep scale filesep 'ppc_RITCellRHippLFP_allCells.mat']); noSess2 = 1; Side = 'RFFA';
+        
+    elseif strcmp(scale, 'ppc_log')
+        %     load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_EncodingImagination_cellChans']); Side = 'RFFA';
+        load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_cellChans']); Side = 'RFFA';
+        
+    end
 end
 
+%%
 % Computing z-scores with bootstrap distributions
-
 thetaRange = frq >= 3 & frq <= 8; % 3 - 8Hz
 alphaRange = frq > 8 & frq <= 12; % 8 - 12Hz
 betaRange = frq >= 13 & frq < 30; % 13 - 30Hz
@@ -74,28 +100,52 @@ frq = frq(thetaRange);
 
 % note that this will fail in sessions with different numbers of neurons
 addpath([diskPath filesep 'Code' filesep 'fieldtrip-20200409']) % Jonathan's version
+
+avSess = true;
 sessStats = {};
+ppc_C1_all = [];
+ppc_C2_all = [];
 for session = 1:length(ppc)
-
+    
     if ~isempty(ppc{session})
-
+        
         ppc_C1 = ppc{session, 1};
         n_neurons_C1 = size(ppc_C1, 1);
         n_channels_C1 = size(ppc_C1, 2);
         n_freq_C1 = size(ppc_C1, 3);
-
+        
         ppc_C1 = reshape(ppc_C1, [n_neurons_C1*n_channels_C1 n_freq_C1]);
-
+        
         ppc_C2 = ppc{session, 2};
         n_neurons_C2 = size(ppc_C2, 1);
         n_channels_C2 = size(ppc_C2, 2);
         n_freq_C2 = size(ppc_C2, 3);
-
+        
         ppc_C2 = reshape(ppc_C2, [n_neurons_C2*n_channels_C2 n_freq_C2]);
-
+        
         frqs = frq;
-
-        sessStats{session} = Utilities.LFP.clusterStats(ppc_C1, ppc_C2, frqs);
-       
+        if avSess
+            ppc_C1_all = [ppc_C1_all; ppc_C1]; 
+            ppc_C2_all = [ppc_C2_all; ppc_C2];            
+        else
+            sessStats{session} = Utilities.LFP.clusterStats(ppc_C1, ppc_C2, frqs);
+        end
     end
 end
+
+if avSess
+    
+    sessStats = Utilities.LFP.clusterStats(ppc_C1_all, ppc_C2_all, frqs);
+    
+end
+
+%% p-value of paired test over time
+
+for i = 1:n_freq_C1
+    
+    [~, pvals(i)] = ttest(ppc_C1_all(:, i), ppc_C2_all(:, i));
+    
+    
+    
+end
+
