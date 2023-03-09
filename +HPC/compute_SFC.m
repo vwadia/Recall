@@ -4,6 +4,7 @@
 function compute_SFC(cpu_nr, n_iter, cellArea, lfpArea, cds, chanType, cellType)
 
 Recall.HPC.setPaths_sfc_hpc
+rng('shuffle')
 if nargin == 6, cellType = []; end
 % load in data for both conditions - should have data_spike_c1, data_lfp_c1, data_spike_c2, data_lfp_c2, params
 % if data extraction was run manually then just data_lfp, data_spike, and params
@@ -67,14 +68,14 @@ for sess = 1:size(data_lfp, 1)
 end
 
 % Save 
-outPath = [diskPath filesep 'Recall_task' filesep 'ppc_' params.scale];
+outPath = [diskPath filesep 'Recall_Task' filesep 'ppc_' params.scale];
 outDir = [outPath filesep ['ppc_' params.cellArea 'Cell_' params.lfpArea 'LFP_' params.cells '_' cds  '_' chanType]];
 if ~exist(outPath, 'dir')
     mkdir(outPath)
 end
 
 fnum = sprintf('%03d', cpu_nr);
-filename = [outPath filesep ['ppc_' num2str(n_iter) '_subsampleIterations_worker_' fnum]];
+filename = [outPath filesep ['ppc_' params.cellArea '_' params.lfpArea '_' cds '_' chanType '_' num2str(n_iter) '_subsampleIterations_worker_' fnum]];
 % disp(filename)
 save(filename, 'ppc', 'ppc_boot', 'frq', 'params', 'fname');
 

@@ -47,7 +47,7 @@ elseif strcmp(whichSteps,'linear')
 end
 
 % Computation and FFT of wavelets
-fprintf('Computation and fft of wavelets for all %d specified frequencies...\n',n_freq)
+% fprintf('Computation and fft of wavelets for all %d specified frequencies...\n',n_freq)
 % compute wavelets for each frequency
 wavelets = zeros(n_samples_wl,n_freq);
 for fi = 1:n_freq
@@ -64,7 +64,7 @@ lastsize = 0;
 for i_trial = 1:n_trials
     % Tell which trial is processed
     fprintf(repmat('\b', 1, lastsize));
-    lastsize = fprintf('Processing trial %d of %d',i_trial,n_trials);
+%     lastsize = fprintf('Processing trial %d of %d',i_trial,n_trials);
     
     % cut out this trial
     this_trial = squeeze(lfp_data(:,:,i_trial));
@@ -100,7 +100,7 @@ ppc = nan(n_neurons,n_channels,n_freq);
 lastsize = 0;
 for ineuron = 1:n_neurons
     fprintf(repmat('\b', 1, lastsize));
-    lastsize = fprintf('Computing PPC in neuron %d of %d',ineuron,n_neurons);
+%     lastsize = fprintf('Computing PPC in neuron %d of %d',ineuron,n_neurons);
     
     this_spike_data_wTrial = squeeze(spike_data(:,ineuron,:));
     this_spike_data = logical(reshape(this_spike_data_wTrial, [n_samples_data * n_trials 1]));
@@ -114,7 +114,7 @@ for ineuron = 1:n_neurons
     % Compute surrogate distribution
     if run_boot 
         fprintf(repmat('\b', 1, lastsize));
-        lastsize = fprintf('Computing PPC distribution for neuron %d of %d',ineuron,n_neurons);
+%         lastsize = fprintf('Computing PPC distribution for neuron %d of %d',ineuron,n_neurons);
         for n_rep = 1:n_iter
             spike_data_boot = Utilities.Shuffle(this_spike_data_wTrial, 2); % shuffle trials
             spike_data_boot = logical(reshape(spike_data_boot, [n_samples_data * n_trials 1]));
