@@ -5,15 +5,12 @@ function compute_SFC(cpu_nr, n_iter, cellArea, lfpArea, cds, chanType, cellType)
 
 Recall.HPC.setPaths_sfc_hpc
 rng('shuffle')
-if nargin == 6, cellType = []; end
-% load in data for both conditions - should have data_spike_c1, data_lfp_c1, data_spike_c2, data_lfp_c2, params
-% if data extraction was run manually then just data_lfp, data_spike, and params
-% load('data_for_sess_' num2str(nr) '_cond1');
-% load('data_for_sess_' num2str(nr) '_cond2');
+if nargin == 6, cellType = 'sigRamp'; end % might change later
 
-if strcmp(cellArea(2:end), 'FFA') && isempty(cellType)
-   cellType = 'sigRamp';
-end
+% % should just always use this 
+% if strcmp(cellArea(2:end), 'FFA') && isempty(cellType)
+%    cellType = 'sigRamp';
+% end
 
 if strcmp(cds, 'ScreeningImagination')
     shortcds = 'SI';
