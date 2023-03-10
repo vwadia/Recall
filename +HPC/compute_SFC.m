@@ -7,11 +7,6 @@ Recall.HPC.setPaths_sfc_hpc
 rng('shuffle')
 if nargin == 6, cellType = 'sigRamp'; end % might change later
 
-% % should just always use this 
-% if strcmp(cellArea(2:end), 'FFA') && isempty(cellType)
-%    cellType = 'sigRamp';
-% end
-
 if strcmp(cds, 'ScreeningImagination')
     shortcds = 'SI';
 elseif strcmp(cds, 'EncodingImagination')
@@ -19,7 +14,7 @@ elseif strcmp(cds, 'EncodingImagination')
 end
 
 fname = [diskPath filesep 'Recall_Task' filesep 'ppc_log' filesep 'Data' filesep ['data_SFC_' cellArea 'Cell_' lfpArea 'LFP' '_' cellType '_' cds '_' chanType]];
-
+disp(fname)
 % if the matfile actually exists
 assert(exist([fname '.mat']) == 2, 'File not found - check name');
 load(fname)
@@ -79,7 +74,7 @@ end
 
 fnum = sprintf('%03d', cpu_nr);
 filename = [outDir filesep ['ppc_' params.cellArea '_' params.lfpArea '_' shortcds '_' chanType '_subsampleIterations_' num2str(n_iter) '_worker_' fnum]];
-% disp(filename)
+disp(filename)
 save(filename, 'ppc', 'ppc_boot', 'frq', 'params', 'fname');
 
 
