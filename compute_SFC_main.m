@@ -44,7 +44,7 @@ saveDataOnly = 1; % for cluster runs
 %% Define patients, areas, and channel list 
 
 patientIDs = {'P76CS', 'P79CS', 'P80CS'};
-cellArea = 'LFFA'; lfpArea = 'LH';
+cellArea = 'LFFA'; lfpArea = 'LSMA';
 % cellArea = 'LH'; lfpArea = 'LFFA';
 
 condition_1 = 'Screening'; cds = ['ScreeningImagination'];
