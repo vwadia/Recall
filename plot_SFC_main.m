@@ -17,9 +17,16 @@ if HPC && balanced
         datPath = [diskPath filesep task filesep scale filesep 'Data' filesep 'HPCOutput' filesep 'combined'];
 %         fn = 'ppc_LFFACell_LHLFP_sigRamp_ScreeningImagination_Cell_combined';
 %         fn = 'ppc_LHCell_LFFALFP_sigRamp_ScreeningImagination_Cell_combined';
-%         fn = 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_Cell_combined';
-        fn = 'ppc_RHCell_RFFALFP_sigRamp_ScreeningImagination_Cell_combined';
+        fn = 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_Cell_combined';
+%         fn = 'ppc_RHCell_RFFALFP_sigRamp_ScreeningImagination_Cell_combined';
 
+%         fn = 'ppc_RFFACell_ROFLFP_sigRamp_ScreeningImagination_Cell_combined';
+%         fn = 'ppc_RFFACell_RSMALFP_sigRamp_ScreeningImagination_Cell_combined';
+%         fn = 'ppc_RFFACell_RALFP_sigRamp_ScreeningImagination_Cell_combined';
+
+%         fn = 'ppc_LFFACell_LOFLFP_sigRamp_ScreeningImagination_Cell_combined';
+%         fn = 'ppc_LFFACell_LSMALFP_sigRamp_ScreeningImagination_Cell_combined';
+%         fn = 'ppc_LFFACell_LALFP_sigRamp_ScreeningImagination_Cell_combined';
 
         load([datPath filesep fn]);
         
@@ -155,7 +162,7 @@ filename = [datPath filesep [params.cellArea 'Cell_' params.lfpArea '_micro-lfp'
 % filename = [diskPath filesep task filesep 'PPC_' Side 'Cell_' Side(1) 'HLFP_AllSessions_AllResp'];
 legend('BottomUp', 'TopDown');
 set(gca, 'FontSize', 14, 'FontWeight', 'bold')
-print(sumFig, filename, '-dpng', '-r0')
+% print(sumFig, filename, '-dpng', '-r0')
 
 end
 %% per session
