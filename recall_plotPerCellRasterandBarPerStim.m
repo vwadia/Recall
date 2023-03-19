@@ -73,7 +73,7 @@ if strcmp(paths.sessPath, 'Recall_Session_2_20210925')
         s_CELL = s_CELL';
         
         IT_Cells = cellfun(@(x) strcmp(x, 'RFFA') || strcmp(x, 'LFFA'), s_CELL(:, 4));
-        screeningPsth = screeningPsth(IT_Cells, :);
+        psths = psths(IT_Cells, :);
         responses = responses(IT_Cells, :);
     end
     
@@ -91,12 +91,12 @@ strctCELL = strctCELL';
 
 
 if FFAChansOnly && ~strcmp(paths.sessPath, 'Recall_Session_2_20210925')
-    screeningPsth = screeningPsth(IT_Cells, :);
+    psths = psths(IT_Cells, :);
     responses = responses(IT_Cells, :);
 elseif IT_MTL_Cells_Only
     IT_MTL_Cells = cellfun(@(x) ismember(x, {'LA', 'LH', 'RA', 'RH', 'RFFA', 'LFFA'}), strctCELL(:, 4), 'UniformOutput', false);
     strctCells = strctCells(cell2mat(IT_MTL_Cells));
-    screeningPsth = screeningPsth(IT_MTL_Cells, :);
+    psths = psths(IT_MTL_Cells, :);
     responses = responses(IT_MTL_Cells, :);
 end
 
@@ -178,11 +178,13 @@ end
 % end
 
 
+% old way
+% index = cellfun(@isempty, responses(:, 2));
 
 
-index = cellfun(@isempty, responses);
-responses(index(:, 1), :) = [];
-if ~strcmp(paths.sessPath, 'Recall_Session_2_20210925')
+index = cell2mat(cellfun(@isnan, responses(:, 2), 'UniformOutput', false));
+responses(index(:, 1), :) = []; % remove non-responsive neurons
+if ~strcmp(paths.sessPath, 'Recall_Session_2_20210925') % for this session can only do IT neurons as the rest are not matchable
     strctCells(index(:, 1)) = [];
 end
 RecallData.ScreenResponses = responses;
@@ -193,22 +195,34 @@ for cellIndex = l(strctCells)
 end
 
 %% calculating the 'encoding' responses (not to be confused with the 'screening' spike counts)
-method = 0; % this should be 0 because there are only a few stimuli each
+method = 3; % use 0 instead of poisson for P76 Sess 2
 for cellIndex = l(strctCells)
     
     % for encoding we can grab this from screening data
     if strcmp(paths.sessPath, 'Recall_Session_2_20210925')
-        if method == 0
-            n_stdDevs = 2.5;
-             [respLat, max_group] = Utilities.computeResponseLatency(RecallData.EncodingTimeCourse(cellIndex, :), RecallData.EncodingOrder, RecallData.timelimits,...
-            RecallData.stimOffDur, RecallData.stimDur, method, n_stdDevs);
-        else
-             [respLat, max_group] = Utilities.computeResponseLatency(RecallData.EncodingTimeCourse(cellIndex, :), RecallData.EncodingOrder, RecallData.timelimits,...
-            RecallData.stimOffDur, RecallData.stimDur);
+        switch method
+            case 0
+                n_stdDevs = 2.5;
+                [respLat, max_group] = Utilities.computeResponseLatency(RecallData.EncodingTimeCourse(cellIndex, :), RecallData.EncodingOrder, RecallData.timelimits,...
+                    RecallData.stimOffDur, RecallData.stimDur, method, n_stdDevs);
+                RecallData.EncResponses{cellIndex, 2} = respLat - (-RecallData.timelimits(1)*1e3);
+                
+            case 1
+                [respLat, max_group] = Utilities.computeResponseLatency(RecallData.EncodingTimeCourse(cellIndex, :), RecallData.EncodingOrder, RecallData.timelimits,...
+                    RecallData.stimOffDur, RecallData.stimDur);
+                RecallData.EncResponses{cellIndex, 2} = respLat - (-RecallData.timelimits(1)*1e3);
+                
+            case 2
+                [respLat, max_group] = Utilities.computeResponseLatency(RecallData.EncodingTimeCourse(cellIndex, :), RecallData.EncodingOrder, RecallData.timelimits,...
+                    RecallData.stimOffDur, RecallData.stimDur);
+                RecallData.EncResponses{cellIndex, 2} = respLat - (-RecallData.timelimits(1)*1e3);
+                
+            case 3
+                [respLat, ~] = Utilities.computeRespLatPoisson(RecallData.EncodingTimeCourse(cellIndex, :), RecallData.EncodingOrder, RecallData.EncodingOrder, RecallData.timelimits,...
+                    RecallData.stimDur, false, 'trial', 2.5);
+                RecallData.EncResponses{cellIndex, 2} = respLat; % poisson spits it out already adjusted
+                
         end
-        
-        RecallData.EncResponses{cellIndex, 2} = respLat - (-RecallData.timelimits(1)*1e3);
-
     else
         respLat = RecallData.ScreenResponses{cellIndex, 2};
         RecallData.EncResponses{cellIndex, 2} = respLat;
@@ -216,10 +230,9 @@ for cellIndex = l(strctCells)
     RecallData.EncResponses{cellIndex, 1} = [];
 
     endRas = size(RecallData.EncodingTimeCourse{cellIndex, 1}, 2);
-    if respLat ~= 0
-        %         respLat = 100 + (-RecallData.timelimits(1)*1e3); % choose this manually
+    if respLat ~= 0 && ~isnan(respLat)
         windowLength = floor(RecallData.stimDur*1e3);
-        windowBegin = respLat;
+        windowBegin = floor(respLat) + (-RecallData.timelimits(1)*1e3); % this was unadjusted the whole time...bruh WTF. Luckily probably won't change anything vwadia March2023
         windowEnd = windowBegin+windowLength;
         if windowEnd > endRas
             windowEnd = endRas;
@@ -234,7 +247,7 @@ for cellIndex = l(strctCells)
         if exist('max_group')
              RecallData.EncResponses{cellIndex, 4} = max_group;
         end
-        respLat = 0; % resetting
+        respLat = 0; % resetting - don't need to do this really
     end
 end
 %% computing the CR spike counts for the images
@@ -271,7 +284,13 @@ elseif IT_MTL_Cells_Only
 else
     save([basePath filesep 'AllResponses'],'strctResp');   
 end
-%%
+
+% was saving full recall data (unless only IT neurons)
+% save([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'RecallData_NoFReeRec.mat'], 'RecallData', 'strctCells', '-v7.3')
+
+
+%% old way - Don't really do this anyumore MArch2023
+%{
 keyboard
 for cellIndex = 1:length(strctCells)
    RecallData.CRResponses{cellIndex, 1} = strctResp(cellIndex).CRResp;
@@ -383,7 +402,7 @@ for cellIndex = l(strctCells)
                 plotOptions.color = [0.6350 0.0780 0.1840];
             
             case 'Screening'
-                full_Screen_psth = screeningPsth(cellIndex, 1:3);               
+                full_Screen_psth = psths(cellIndex, 1:3);               
                 Screen_psth = {full_Screen_psth{1, 1}(find(order == options.recalled_stim(stim)), :), full_Screen_psth{1, 2}(find(order == options.recalled_stim(stim)), :), full_Screen_psth{1, 3}};
                 ScreenStimRaster = Screen_psth{1, 1};
                 stimRaster{stim, 1} = ScreenStimRaster;
@@ -443,3 +462,4 @@ for cellIndex = l(strctCells)
     end
      
 end
+%}

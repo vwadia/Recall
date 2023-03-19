@@ -11,7 +11,7 @@ task = 'Recall_Task';
 % scale = 'ppc_linear';
 scale = 'ppc_log';
 
-HPC = true; balanced = true;
+HPC = false; balanced = true;
 addPVals = true;
 if HPC && balanced
         datPath = [diskPath filesep task filesep scale filesep 'Data' filesep 'HPCOutput' filesep 'combined'];
@@ -47,8 +47,13 @@ else
         load([diskPath filesep task filesep scale filesep 'ppc_RITCellRHippLFP_allCells.mat']); noSess2 = 1; Side = 'RFFA';
         
     elseif strcmp(scale, 'ppc_log')
-        %     load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_EncodingImagination_cellChans']); Side = 'RFFA';
-        load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_cellChans']); Side = 'RFFA';
+%         datPath = [diskPath filesep task filesep scale];
+        datPath = [diskPath filesep task filesep scale filesep 'SpikesfromstimOn'];
+
+        
+        %     load([datPath filesep 'ppc_RFFACell_RHLFP_sigRamp_EncodingImagination_cellChans']); Side = 'RFFA';
+        load([datPath filesep 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_cellChans']); Side = 'RFFA';
+%         load([datPath filesep 'ppc_RHCell_RFFALFP_sigRamp_ScreeningImagination_cellChans']); Side = 'RFFA';
         
     end
 end
