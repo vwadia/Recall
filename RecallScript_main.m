@@ -32,8 +32,8 @@ paths.basePath = diskPath;
 % paths.sessPath = 'Recall_Session_1_20201121';
 % paths.sessPath = 'Recall_Session_2_20201124';
 
-% paths.patientPath = 'P76CS';
-% paths.sessPath = 'ReScreenRecall_Session_1_20210917';
+paths.patientPath = 'P76CS';
+paths.sessPath = 'ReScreenRecall_Session_1_20210917';
 % paths.sessPath = 'Recall_Session_2_20210925';
 % paths.sessPath = 'ReScreenRecall_Session_3_20210927';
 
@@ -42,9 +42,9 @@ paths.basePath = diskPath;
 % paths.sessPath = 'ReScreenRecall_Session_2_20220403';
 % paths.sessPath = 'ReScreenRecall_Session_3_20220405';
 
-paths.patientPath = 'P80CS';
+% paths.patientPath = 'P80CS';
 % paths.sessPath = 'ReScreenRecall_Session_1_20220728';
-paths.sessPath = 'ReScreenRecall_Session_2_20220731';
+% paths.sessPath = 'ReScreenRecall_Session_2_20220731';
 
 paths.rawPath = 'raw'; 
 
