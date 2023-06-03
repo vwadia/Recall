@@ -32,8 +32,8 @@ paths.basePath = diskPath;
 % paths.sessPath = 'Recall_Session_1_20201121';
 % paths.sessPath = 'Recall_Session_2_20201124';
 
-paths.patientPath = 'P76CS';
-paths.sessPath = 'ReScreenRecall_Session_1_20210917';
+% paths.patientPath = 'P76CS';
+% paths.sessPath = 'ReScreenRecall_Session_1_20210917';
 % paths.sessPath = 'Recall_Session_2_20210925';
 % paths.sessPath = 'ReScreenRecall_Session_3_20210927';
 
@@ -45,6 +45,14 @@ paths.sessPath = 'ReScreenRecall_Session_1_20210917';
 % paths.patientPath = 'P80CS';
 % paths.sessPath = 'ReScreenRecall_Session_1_20220728';
 % paths.sessPath = 'ReScreenRecall_Session_2_20220731';
+
+% paths.patientPath = 'P84CS';
+% paths.sessPath = 'ReScreenRecall_Session_1_20230406';
+% paths.sessPath = 'ReScreenRecall_Session_2_20230408';
+
+paths.patientPath = 'P85CS';
+paths.sessPath = 'ReScreenRecall_Session_1_20230424';
+
 
 paths.rawPath = 'raw'; 
 
@@ -70,7 +78,7 @@ paths.taskCodePath = [boxPath filesep 'RecallTaskVarun'];
 paths.dataPath = 'processedData';
 
 % addpath(genpath([paths.basePath filesep 'helpers']));
-addpath(genpath([paths.basePath filesep 'osortTextUI']));
+addpath(genpath([paths.basePath filesep 'Code' filesep 'osortTextUI']));
 addpath(genpath([paths.basePath filesep 'ObjectSpace']));
 addpath(paths.taskCodePath);
 
@@ -80,6 +88,7 @@ setTTLCodes
 
 % get rolling already
 % datStrct = 'RecallData.mat'; AllCells = 1;
+% datStrct = 'RecallData_NoFreeRec.mat'; AllCells = 1;
 % datStrct = 'RecallData_FFAonly.mat'; IT_Cells = 1;
 % datStrct = 'RecallData_IT_MTL.mat'; IT_MTL_Cells = 1;
 % 
@@ -107,7 +116,7 @@ setTTLCodes
 
 %%
 
-FFAChansOnly = 1; 
+FFAChansOnly = 0; 
 
 paths.cellPath = [paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep paths.sortPath filesep 'final'];
 events = getRawTTLs([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep paths.rawPath filesep 'Events.nev'], 1); % TTLs
@@ -142,6 +151,15 @@ elseif strcmp(paths.sessPath,'ReScreenRecall_Session_2_20220731')
     exp_start = find(RecallData.eventsMS(:, 2) == EXPERIMENT_ON);
     exp_end = find(RecallData.eventsMS(:, 2) == EXPERIMENT_OFF);
     RecallData.eventsMS = RecallData.eventsMS(exp_start(1):exp_end(1), :); 
+elseif strcmp(paths.sessPath,'ReScreenRecall_Session_1_20230406') ||...
+        strcmp(paths.sessPath,'ReScreenRecall_Session_2_20230408')
+    exp_start = find(RecallData.eventsMS(:, 2) == EXPERIMENT_ON);
+    exp_end = find(RecallData.eventsMS(:, 2) == EXPERIMENT_OFF);
+    RecallData.eventsMS = RecallData.eventsMS(exp_start(1):exp_end(1), :);
+elseif strcmp(paths.sessPath,'ReScreenRecall_Session_1_20230424')
+    exp_start = find(RecallData.eventsMS(:, 2) == EXPERIMENT_ON);
+    exp_end = find(RecallData.eventsMS(:, 2) == EXPERIMENT_OFF);
+    RecallData.eventsMS = RecallData.eventsMS(exp_start(3):exp_end(1), :);
 else
     exp_start = find(RecallData.eventsMS(:, 2) == EXPERIMENT_ON);
     exp_end = find(RecallData.eventsMS(:, 2) == EXPERIMENT_OFF);
@@ -202,8 +220,8 @@ RecallData.eventsMS = RecallData.eventsMS(train_end:end, :);
 RecallData = Recall.preProcessRecall(strctCells, paths, RecallData, atCedars);
 
 RecallData.offsetTones = [1000 6500]; % no stimOFFtimes used so raster is -offset1 to +offset2 around the event
-RecallData.offsetFR = [3000 3000]; % no stimOFFtimes used so raster is -offset1 to +offset2 around the event
-RecallData.offsetEnc = [500 500];
+RecallData.offsetFR = [5000 3000]; % no stimOFFtimes used so raster is -offset1 to +offset2 around the event
+RecallData.offsetEnc = [1500 500];
 
 % number of FR repetitions
 % RecallData.FR_numRepetitions = length(RecallData.recEventMarkers{1, 3}) + length(RecallData.recEventMarkers{1, 5}); 
@@ -218,7 +236,7 @@ order = 1;
 % carve up rasters for encoding, CR and FR - s for P76 Session 2
 % carve up rasters for encoding, CR and FR - s for P76 Session 3
 tic
-for cellIndex = l(strctCells)
+for cellIndex = 1:length(strctCells)
     
 %     for stim = 1:length(RecallData.stimuli) % there are 2 recall sections per trial        
 %         [RecallData.FREventTimeCourse{stim, 1}{cellIndex, 1}, RecallData.FREventTimeCourse{stim, 1}{cellIndex, 2},  RecallData.FREventTimeCourse{stim, 1}{cellIndex, 3}]...
@@ -236,12 +254,27 @@ for cellIndex = l(strctCells)
     [RecallData.EncodingTimeCourse{cellIndex, 1}, RecallData.EncodingTimeCourse{cellIndex, 2},  RecallData.EncodingTimeCourse{cellIndex, 3}]...
         = Utilities.makeRastersFromStrctCells(strctCells(cellIndex), RecallData.offsetEnc, 1, 1, bin_size, RecallData.imageONTimes, RecallData.imageOFFTimes);
     
-    [RecallData.DistractionTimeCourse{cellIndex, 1}, RecallData.DistractionTimeCourse{cellIndex, 2},  RecallData.DistractionTimeCourse{cellIndex, 3}]...
-        = Utilities.makeRastersFromStrctCells(strctCells(cellIndex), RecallData.offsetEnc, 1, 1, bin_size, RecallData.distONTimes, RecallData.distOFFTimes);
+    if ~strcmp(paths.sessPath, 'ReScreenRecall_Session_2_20230408') && ~strcmp(paths.sessPath, 'ReScreenRecall_Session_1_20230424') % these sessions were done without distraction period
+        [RecallData.DistractionTimeCourse{cellIndex, 1}, RecallData.DistractionTimeCourse{cellIndex, 2},  RecallData.DistractionTimeCourse{cellIndex, 3}]...
+            = Utilities.makeRastersFromStrctCells(strctCells(cellIndex), RecallData.offsetEnc, 1, 1, bin_size, RecallData.distONTimes, RecallData.distOFFTimes);
+    end
     
+    % for reactivation calculation
+     [RecallData.PreTrialBaselineTimeCourse{cellIndex, 1}, RecallData.PreTrialBaselineTimeCourse{cellIndex, 2},  RecallData.PreTrialBaselineTimeCourse{cellIndex, 3}]...
+        = Utilities.makeRastersFromStrctCells(strctCells(cellIndex), RecallData.offsetFR, 1, 1, bin_size, RecallData.trialONTimes);
+    
+       % for reactivation calculation - need to assign the ton-period-begin time in the preprocess script
+     [RecallData.PreCRBaselineTimeCourse{cellIndex, 1}, RecallData.PreCRBaselineTimeCourse{cellIndex, 2},  RecallData.PreCRBaselineTimeCourse{cellIndex, 3}]...
+        = Utilities.makeRastersFromStrctCells(strctCells(cellIndex), [5000 5000], 1, 1, bin_size, RecallData.tonePeriodBeginTimes);
 end
 toc
-Recall.recall_plotPerCellRasterandBarPerStim
+%%
+
+if ~strcmp(paths.sessPath, 'Recall_Session_2_20210925')
+    Recall.recall_plotPerCellRasterandBarPerStim
+elseif strcmp(paths.sessPath, 'Recall_Session_2_20210925') && FFAChansOnly
+    Recall.recall_plotPerCellRasterandBarPerStim
+end
 keyboard % safety in case it doesn't enter script for whatever reason
 
 % go to recall_plotPerCellRasterandBarPerStim for making responses per

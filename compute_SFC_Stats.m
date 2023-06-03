@@ -7,14 +7,14 @@ task = 'Recall_Task';
 % scale = 'ppc_linear';
 scale = 'ppc_log';
 
-HPC = true; balanced = true;
+HPC = false; balanced = true;
 
 if HPC && balanced
     datPath = [diskPath filesep task filesep scale filesep 'Data' filesep 'HPCOutput' filesep 'combined'];
     %         fn = 'ppc_LFFACell_LHLFP_sigRamp_ScreeningImagination_Cell_combined';
-        fn = 'ppc_LHCell_LFFALFP_sigRamp_ScreeningImagination_Cell_combined';
+%         fn = 'ppc_LHCell_LFFALFP_sigRamp_ScreeningImagination_Cell_combined';
     %         fn = 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_Cell_combined';
-%     fn = 'ppc_RHCell_RFFALFP_sigRamp_ScreeningImagination_Cell_combined';
+    fn = 'ppc_RHCell_RFFALFP_sigRamp_ScreeningImagination_Cell_combined';
     
     
     load([datPath filesep fn]);
@@ -37,8 +37,21 @@ else
         load([diskPath filesep task filesep scale filesep 'ppc_RITCellRHippLFP_allCells.mat']); noSess2 = 1; Side = 'RFFA';
         
     elseif strcmp(scale, 'ppc_log')
+        datPath = [diskPath filesep task filesep scale];
+
         %     load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_EncodingImagination_cellChans']); Side = 'RFFA';
-        load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_cellChans']); Side = 'RFFA';
+%         load([diskPath filesep task filesep scale filesep 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_Cell']); Side = 'RFFA';
+        
+%         load([datPath filesep 'ppc_RFFACell_RHLFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'RFFA';
+        load([datPath filesep 'ppc_LFFACell_LHLFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'LFFA';
+%         load([datPath filesep 'ppc_RFFACell_RALFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'RFFA';
+%         load([datPath filesep 'ppc_LFFACell_LALFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'LFFA';
+%         load([datPath filesep 'ppc_RFFACell_RACLFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'RFFA';
+%         load([datPath filesep 'ppc_LFFACell_LACLFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'LFFA';
+%         load([datPath filesep 'ppc_RFFACell_RSMALFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'RFFA';
+%         load([datPath filesep 'ppc_LFFACell_LSMALFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'LFFA';
+%         load([datPath filesep 'ppc_RFFACell_ROFLFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'RFFA';
+%         load([datPath filesep 'ppc_LFFACell_LOFLFP_sigRamp_ScreeningImagination_NoNoise']); Side = 'LFFA';
         
     end
 end
@@ -56,13 +69,15 @@ for cond = 1:size(ppc, 2)
     for session = 1:size(ppc, 1)
         if ~isempty(ppc{session, cond})
             ppc_z{session, cond} = nan(size(ppc{session, cond}));
-            ppc_z{session, cond} = ppc_z{session, cond}(:, :, 1:sum(thetaRange));
+%             ppc_z{session, cond} = ppc_z{session, cond}(:, :, 1:sum(thetaRange));
             for neuron = 1:size(ppc{session, cond}, 1)
                 for channel = 1:size(ppc{session, cond}, 2)
                     
                     %                 ppcIndiv = squeeze(ppc{session, cond}(neuron, channel, thetaRange));
-                    ppcIndiv = ppc{session, cond}(neuron, channel, thetaRange); % for all frequencies
-                    ppcDistRange = squeeze(ppc_boot{session, cond}(neuron, channel, :, thetaRange));
+%                     ppcIndiv = ppc{session, cond}(neuron, channel, thetaRange); % for all frequencies
+%                     ppcDistRange = squeeze(ppc_boot{session, cond}(neuron, channel, :, thetaRange)); 
+                    ppcIndiv = ppc{session, cond}(neuron, channel, :); % for all frequencies
+                    ppcDistRange = squeeze(ppc_boot{session, cond}(neuron, channel, :, :));
                     
                     for fr = 1:sum(thetaRange)
                         ppcDist = ~isnan(ppcDistRange(fr, :));
@@ -95,7 +110,7 @@ end
 
 % because I'm lazy - for plotting
 ppc = ppc_z;
-frq = frq(thetaRange);
+% frq = frq(thetaRange);
 %% Cluster based parametric statistics
 
 % note that this will fail in sessions with different numbers of neurons

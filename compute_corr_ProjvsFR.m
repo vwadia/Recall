@@ -10,17 +10,31 @@ setDiskPaths
 
 load([diskPath filesep 'ObjectSpace' filesep '500Stimuli' filesep 'params_Alexnet_fc6_500Stimuli.mat']); % will create dataParams = 500x50
 
-% task = 'Object_Screening';
-task = 'Recall_Task';
+task = 'Object_Screening';
+% task = 'Recall_Task';
 
 if strcmp(task, 'Recall_Task')
     load([diskPath filesep 'Recall_Task' filesep 'AllITCells_500stim_Im_SigRamp']);
     load([diskPath filesep 'Recall_Task' filesep 'AllITResponses_500stim_Im_SigRamp']);
     lbl = 'Imagination';
     
+%     if ~exist('ovrlap')
+%         load([diskPath filesep 'Recall_Task' filesep 'SigRampCellsthatReactivate_alpha0.05.mat'])
+%     end
+    
 elseif strcmp(task, 'Object_Screening')
     load([diskPath filesep 'Object_Screening' filesep 'MergedITCells_500stim_Scrn_SigRamp']); % loads cells with sig ramps
     lbl = 'Viewing';
+end
+
+
+% ovrlap = ~ovrlap;
+% reactivated cells only
+if exist('ovrlap', 'var')
+    strctCells = strctCells(ovrlap);
+    responses = responses(ovrlap, :);
+    psths = psths(ovrlap, :);
+    strctResp = strctResp(ovrlap);
 end
 
 options.task = task;
@@ -37,7 +51,7 @@ imageIDs = [1:500];
 options.screenType = 'Object';
 
 cc = [];
-for cellIndex = l(strctCells)
+for cellIndex = 1:length(strctCells)
     
     options.ind_train = imageIDs;
     if strcmp(options.task, 'Recall_Task')
@@ -89,6 +103,12 @@ else
     filename = [taskPath filesep 'CDFProjvsFR_STAvsOrtho_' lbl];
 
 end
+
+if exist('ovrlap', 'var')
+    filename = [filename '_reactivatedCells'];
+end
+
+
 xlabel('x = Correlation value');
 % ylabel('No of neurons');
 
@@ -102,7 +122,7 @@ lgnd.Position = [0.327678571428572,0.646428571428573,0.224107142857143,0.0845238
     
 elseif strcmp(task, 'Recall_Task')
     x_lim = xlim;
-lgnd.Position = [0.197321428571428,0.646428571428573,0.224107142857143,0.08452380952381];
+lgnd.Position = [0.170982145837375,0.550000001490118,0.291071422610964,0.110714282734053];
 
     title({'Correlation of projection value vs firing rate', 'Preferred and Orthogonal axes', 'Imagination'})
     text(x_lim(1)*0.80, y_lim(2)*0.88, ['p = ' num2str(p)], 'FontSize', 14,'FontWeight', 'bold');
@@ -110,7 +130,7 @@ lgnd.Position = [0.197321428571428,0.646428571428573,0.224107142857143,0.0845238
 end
 
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
-print(f, filename, '-dpng', '-r0')
+% print(f, filename, '-dpng', '-r0')
 %% histogram of differences between ecdfs of pref and ortho axes
 %% This is basically the whole function. Improve this code
 clear
@@ -143,7 +163,7 @@ for t = 1:2
     
     
     cc = [];
-    for cellIndex = l(strctCells)
+    for cellIndex = 1:length(strctCells)
         
         options.ind_train = imageIDs;
         if strcmp(options.task, 'Recall_Task')
@@ -180,8 +200,8 @@ m2 = median(taskCorr{2});
 
 
 
-text(m1*0.75, y_lim(2)*0.95, ['median = ' num2str(m1)], 'FontSize', 14,'FontWeight', 'bold');
-text(m2*0.55, y_lim(2)*0.55, ['median = ' num2str(m2)], 'FontSize', 14,'FontWeight', 'bold');
+text(m1*0.75, y_lim(2)*0.90, {'median' [ '= ' num2str(m1)]}, 'FontSize', 14,'FontWeight', 'bold');
+text(m2*0.65, y_lim(2)*0.67, {'median' [ '= ' num2str(m2)]}, 'FontSize', 14,'FontWeight', 'bold');
 
 
 lgnd = legend({'Viewing', 'Imagination'});
@@ -189,7 +209,7 @@ xlabel('Difference between pref and ortho cdfs');
 ylabel('No of neurons');
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
 filename = [diskPath filesep 'Object_Screening' filesep 'Hist_DiffofCDFs_ViewingandIm'];
-print(f, filename, '-dpng', '-r0')
+% print(f, filename, '-dpng', '-r0')
 
 %% histogram of different correlations
 f = figure; 
@@ -218,6 +238,11 @@ title({'Correlation of projection value vs firing rate', lbl})
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
 
 filename = [taskPath filesep 'CorrProjValvsFR_STAvsOrtho_' lbl];
+if exist('ovrlap', 'var')
+    filename = [filename '_reactivatedCells'];
+
+end
+
 % print(f, filename, '-dpng', '-r0')
 
 

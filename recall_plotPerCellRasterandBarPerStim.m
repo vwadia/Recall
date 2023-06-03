@@ -61,7 +61,15 @@ elseif strcmp(paths.sessPath, 'ReScreenRecall_Session_1_20220728')
 
 elseif strcmp(paths.sessPath, 'ReScreenRecall_Session_2_20220731')
     options.recalled_stim = [55 88 148 251 256 274 285 365];
+    
+elseif strcmp(paths.sessPath, 'ReScreenRecall_Session_1_20230406')
+    options.recalled_stim = [68 121 243 261 281 308 415 434];
 
+elseif strcmp(paths.sessPath, 'ReScreenRecall_Session_2_20230408')
+    options.recalled_stim = [52 141 195 223 238 351 399 482];
+    
+elseif strcmp(paths.sessPath, 'ReScreenRecall_Session_1_20230424')
+    options.recalled_stim = [7 11 99 153 201 251 355 486];
 end
 
 if strcmp(paths.sessPath, 'Recall_Session_2_20210925')
@@ -100,103 +108,38 @@ elseif IT_MTL_Cells_Only
     responses = responses(IT_MTL_Cells, :);
 end
 
-% if strcmp(paths.sessPath, 'ReScreenRecall_Session_3_20210927')
-% %     options.recalled_stim = [230 344 81 45 135 181 44 18];
-%     options.recalled_stim = [18 44 45 81 135 181 230 344] ;
-%     if AllCells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'PsthandResponses']);        
-%     elseif IT_MTL_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'IT_MTL_PsthandResponses']);
-%     elseif IT_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'ITPsthandResponses']);
-%     end
-%     pathOut = [basePath filesep 'processedData' filesep 'SpikeCountComparison_ReScreenandCR'];
-%     
-% elseif strcmp(paths.sessPath, 'Recall_Session_2_20210925')
-%     options.recalled_stim = [54 129 130 186 270 449]; 
-%     if AllCells
-%         load(['G:\SUAnalysis\Recall_Task\P76CS\RecallScreening_Session_2_20210925' filesep 'PsthandResponses']);        
-%     elseif IT_MTL_Cells
-%         load(['G:\SUAnalysis\Recall_Task\P76CS\RecallScreening_Session_2_20210925' filesep 'IT_MTL_PsthandResponses']);
-%     elseif IT_Cells
-%         load(['G:\SUAnalysis\Recall_Task\P76CS\RecallScreening_Session_2_20210925' filesep 'ITPsthandResponses']);
-%     end
-% %     load(['G:\SUAnalysis\Recall_Task\P76CS\RecallScreening_Session_2_20210925\ITPsthandResponses']);
-%     pathOut = [basePath filesep 'processedData' filesep 'SpikeCountComparison_MorningScreenandCR'];
-%     
-% elseif strcmp(paths.sessPath, 'ReScreenRecall_Session_1_20210917')
-%     options.recalled_stim = [12 19 25 123 270 487]; 
-%     
-%     if AllCells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'PsthandResponses']);        
-%     elseif IT_MTL_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'IT_MTL_PsthandResponses']);
-%     elseif IT_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'ITPsthandResponses']);
-%     end
-%     
-%     pathOut = [basePath filesep 'processedData' filesep 'SpikeCountComparison_ReScreenandCR'];
-% elseif strcmp(paths.sessPath, 'ReScreenRecall_Session_1_20220330')
-%     
-%     options.recalled_stim = [9 157 167 200 201 291 422 498];
-%     
-%     if AllCells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'PsthandResponses']);        
-%     elseif IT_MTL_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'IT_MTL_PsthandResponses']);
-%     elseif IT_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'ITPsthandResponses']);
-%     end
-%     pathOut = [basePath filesep 'processedData' filesep 'SpikeCountComparison_ReScreenandCR'];
-%     
-% elseif strcmp(paths.sessPath, 'ReScreenRecall_Session_2_20220403')
-%     
-%     options.recalled_stim = [9 12 117 292 360 368 421 492];
-%     
-%     if AllCells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'PsthandResponses']);        
-%     elseif IT_MTL_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'IT_MTL_PsthandResponses']);
-%     elseif IT_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'ITPsthandResponses']);
-%     end
-%     pathOut = [basePath filesep 'processedData' filesep 'SpikeCountComparison_ReScreenandCR'];
-%     
-% elseif strcmp(paths.sessPath, 'ReScreenRecall_Session_3_20220405')
-%     
-%     options.recalled_stim = [77 112 160 232 278 345 387 440];
-% 
-%     if AllCells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'PsthandResponses']);        
-%     elseif IT_MTL_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'IT_MTL_PsthandResponses']);
-%     elseif IT_Cells
-%         load([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'ITPsthandResponses']);
-%     end
-%     pathOut = [basePath filesep 'processedData' filesep 'SpikeCountComparison_ReScreenandCR'];
-% 
-% end
-
 
 % old way
 % index = cellfun(@isempty, responses(:, 2));
 
-
-index = cell2mat(cellfun(@isnan, responses(:, 2), 'UniformOutput', false));
-responses(index(:, 1), :) = []; % remove non-responsive neurons
-if ~strcmp(paths.sessPath, 'Recall_Session_2_20210925') % for this session can only do IT neurons as the rest are not matchable
-    strctCells(index(:, 1)) = [];
-end
+% GETTING RID OF THIS ----------------------------------------------------
+% index = cell2mat(cellfun(@isnan, responses(:, 2), 'UniformOutput', false));
+% responses(index(:, 1), :) = []; % remove non-responsive neurons
+% if ~strcmp(paths.sessPath, 'Recall_Session_2_20210925') % for this session can only do IT neurons as the rest are not matchable
+%     strctCells(index(:, 1)) = [];
+%     RecallData.CRTimeCourse(index(:, 1), :) = [];
+%     RecallData.EncodingTimeCourse(index(:, 1), :) = [];
+%     RecallData.DistractionTimeCourse(index(:, 1), :) = [];
+% end
+% -------------------------------------------------------------------------
 RecallData.ScreenResponses = responses;
 
 % grab the screening responses for only the imagined stimuli
-for cellIndex = l(strctCells)
-    RecallData.ScreenResponses{cellIndex, 4} = responses{cellIndex, 1}(options.recalled_stim, 1);
+for cellIndex = 1:length(strctCells)
+    if ~isnan(responses{cellIndex, 1})
+        RecallData.ScreenResponses{cellIndex, 4} = responses{cellIndex, 1}(options.recalled_stim, 1);
+    else
+        RecallData.ScreenResponses{cellIndex, 4} = nan;
+    end
 end
 
 %% calculating the 'encoding' responses (not to be confused with the 'screening' spike counts)
-method = 3; % use 0 instead of poisson for P76 Sess 2
-for cellIndex = l(strctCells)
+if strcmp(paths.sessPath, 'Recall_Session_2_20210925')
+    method = 0; % for computing from encoding use method 0
+else
+    method = 3; % else from screening poisson
+end
+for cellIndex = 1:length(strctCells)
     
     % for encoding we can grab this from screening data
     if strcmp(paths.sessPath, 'Recall_Session_2_20210925')
@@ -252,7 +195,7 @@ for cellIndex = l(strctCells)
 end
 %% computing the CR spike counts for the images
 CRLength = 5000; %ms
-for cellIndex = l(strctCells)
+for cellIndex = 1:length(strctCells)
     spikeCount = [];
     stimRaster = {};
     for stim = 1:length(RecallData.imageIDs)
@@ -276,7 +219,7 @@ for cellIndex = 1:length(strctCells)
     
 end
 
-keyboard
+% keyboard
 if FFAChansOnly
     save([basePath filesep 'ITResponses'],'strctResp');
 elseif IT_MTL_Cells_Only 
@@ -286,8 +229,10 @@ else
 end
 
 % was saving full recall data (unless only IT neurons)
-% save([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'RecallData_NoFReeRec.mat'], 'RecallData', 'strctCells', '-v7.3')
-
+if ~FFAChansOnly
+    save([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'RecallData_NoFReeRec.mat'], 'RecallData', 'strctCells', '-v7.3')
+    disp("Saved!")
+end
 
 %% old way - Don't really do this anyumore MArch2023
 %{

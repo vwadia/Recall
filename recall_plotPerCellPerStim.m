@@ -3,7 +3,14 @@
 
 % Plot 1
 % per cell encoding, CR and FR on the same page for all stimuli
-subPlotNum = 3;
+noFR = true;
+
+if noFR
+    subPlotNum = 2; % only enc and CR
+else
+    subPlotNum = 3;
+end
+
 % setting up viewing parameters
 MarkerSize = 4;
 Fontsize = 20;
@@ -17,11 +24,16 @@ for cellIndex = l(strctCells)
         % collect psths
         full_enc_psth = RecallData.EncodingTimeCourse(cellIndex, 1:3);
         full_CR_psth = RecallData.CRTimeCourse(cellIndex, 1:3);
-        full_FR_psth = RecallData.perCellAllStimFR(cellIndex, 1:3);
+        
+        if ~noFR
+            full_FR_psth = RecallData.perCellAllStimFR(cellIndex, 1:3);
+        end
         
         enc_psth = {full_enc_psth{1, 1}(find(RecallData.EncodingOrder == stim), :), full_enc_psth{1, 2}(find(RecallData.EncodingOrder == stim), :), full_enc_psth{1, 3}};
         CR_psth = {full_CR_psth{1, 1}(find(RecallData.CROrder == stim), :), full_CR_psth{1, 2}(find(RecallData.CROrder == stim), :), full_CR_psth{1, 3}};
-        FR_psth = {full_FR_psth{1, 1}(find(RecallData.order_perCellAllStimFR == stim), :), full_FR_psth{1, 2}(find(RecallData.order_perCellAllStimFR == stim), :), full_FR_psth{1, 3}};
+        if ~noFR
+            FR_psth = {full_FR_psth{1, 1}(find(RecallData.order_perCellAllStimFR == stim), :), full_FR_psth{1, 2}(find(RecallData.order_perCellAllStimFR == stim), :), full_FR_psth{1, 3}};
+        end
         
         % 6 subplots - 1 pair for encoding, 1 for CR and 1 for FR
         f = figure; clf;
@@ -55,7 +67,12 @@ for cellIndex = l(strctCells)
             hold on
             imagesTOplot = unique(orderToUse);
             
-            gyl = Utilities.Plotting.findingGlobalYLim([CR_psth{1, 2}(:, 1:6000); FR_psth{1, 2}(:, 1:6000)], [2; 3], repelem([2; 3], 6), 'AIC');
+            if noFR
+                gyl = Utilities.Plotting.findingGlobalYLim(CR_psth{1, 2}(:, 1:6000), 2, repelem(2, 6), 'AIC');
+            else
+                gyl = Utilities.Plotting.findingGlobalYLim([CR_psth{1, 2}(:, 1:6000); FR_psth{1, 2}(:, 1:6000)], [2; 3], repelem([2; 3], 6), 'AIC');
+            end
+            
             gyl2 = Utilities.Plotting.findingGlobalYLim(enc_psth{1, 2}, 1, repelem(1, 6)', 'AIC');
             % set globaly yl
             if gyl2 >= gyl

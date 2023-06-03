@@ -2,8 +2,15 @@
 %% per cell encoding, CR and FR on the same page for all stimuli
 %% Make this a function 
 
+noFR = true;
 
-subPlotNum = 3; % change to 2 for only Enc and CR
+if noFR
+    subPlotNum = 2; % change to 2 for only Enc and CR
+else
+    subPlotNum = 3; % change to 2 for only Enc and CR    
+end
+
+
 % setting up viewing parameters
 MarkerSize = 4;
 Fontsize = 20;
@@ -16,18 +23,27 @@ for cellIndex = l(strctCells)
     % collect psths
     enc_psth = RecallData.EncodingTimeCourse(cellIndex, 1:3);
     CR_psth = RecallData.CRTimeCourse(cellIndex, 1:3);
-    FR_psth = RecallData.perCellAllStimFR(cellIndex, 1:3);
     
+    if ~noFR
+        FR_psth = RecallData.perCellAllStimFR(cellIndex, 1:3);
+    end
     % 6 subplots - 1 pair for encoding, 1 for CR and 1 for FR
-    f = figure; clf;
+    f = figure('Visible', 'off'); clf;
     set(gcf,'Position',get(0,'Screensize')) % display fullsize on other screen
     sgt = sgtitle({[num2str(strctCells(cellIndex).Name) '\_' strctCells(cellIndex).brainArea '\_Comparison']}); % backslash allows you to print the underscore
     sgt.FontSize = Fontsize;
     sgt.FontWeight = 'Bold';
     
     
-    gyl = Utilities.Plotting.findingGlobalYLim([CR_psth{1, 2}(:, 1:6000); FR_psth{1, 2}(:, 1:6000)], ...
-        unique([RecallData.CROrder; 10*RecallData.order_perCellAllStimFR]), [RecallData.CROrder; 10*RecallData.order_perCellAllStimFR], 'AIC');
+    if noFR
+        gyl = Utilities.Plotting.findingGlobalYLim(CR_psth{1, 2}(:, 1:6000), ...
+            unique(RecallData.CROrder), RecallData.CROrder, 'AIC');
+    else
+        gyl = Utilities.Plotting.findingGlobalYLim([CR_psth{1, 2}(:, 1:6000); FR_psth{1, 2}(:, 1:6000)], ...
+            unique([RecallData.CROrder; 10*RecallData.order_perCellAllStimFR]), [RecallData.CROrder; 10*RecallData.order_perCellAllStimFR], 'AIC');
+        
+    end
+    
     gyl2 = Utilities.Plotting.findingGlobalYLim(enc_psth{1, 2}, unique(RecallData.EncodingOrder), RecallData.EncodingOrder, 'AIC');
     % set globaly yl
     if gyl2 >= gyl
