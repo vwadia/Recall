@@ -41,8 +41,8 @@ alpha = 0.05;
 numReacTrialsPerStim = 3;
 MinSpInBurst = 5;
 load([diskPath filesep task filesep 'ReacDataPoisson_' num2str(numReacTrialsPerStim) 'ReacTrPerStim_MinSPB' num2str(MinSpInBurst)])
-RC_names = reacData.Name;
-RC_ChanNum = reacData.Channel;
+RC_names = reacData.Name(reacData.reactivated);
+RC_ChanNum = reacData.Channel(reacData.reactivated);
 
 % smoothingBin = 500; % for enc and CR - taken from recallscript_main
 
