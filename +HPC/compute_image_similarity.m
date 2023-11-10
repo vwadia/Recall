@@ -2,7 +2,7 @@
 % computing ssim on all things takes forever (~6 months)
 function compute_image_similarity(cpu_nr)
 
-Screening.HPC.setPaths_imageSim_hpc
+Recall.HPC.setPaths_imageSim_hpc
 rng('shuffle')
 
 
@@ -14,10 +14,10 @@ disp(fname);
 assert(exist([fname '.mat']) == 2, 'File not found - check name');
 load(fname)
 
-imageIDs = [1:500]';
+
 bigSetIds = 1:size(im2all_woStim, 3);
 
-ssimVals_imIDs = cell(length(imageIDs), 1);
+% ssimVals_imIDs = cell(length(imageIDs), 1);
 
 % hard coded numbers - im set is 17856, # of workers is 31 and 17856/31 = 576
 n_image_start = (576*(cpu_nr-1))+1; 
