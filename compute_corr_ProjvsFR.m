@@ -10,25 +10,24 @@ setDiskPaths
 
 load([diskPath filesep 'ObjectSpace' filesep '500Stimuli' filesep 'params_Alexnet_fc6_500Stimuli.mat']); % will create dataParams = 500x50
 
-task = 'Object_Screening';
-% task = 'Recall_Task';
+% task = 'Object_Screening';
+task = 'Recall_Task';
 
 if strcmp(task, 'Recall_Task')
     load([diskPath filesep 'Recall_Task' filesep 'AllITCells_500stim_Im_SigRamp']);
     load([diskPath filesep 'Recall_Task' filesep 'AllITResponses_500stim_Im_SigRamp']);
     lbl = 'Imagination';
     
-%     if ~exist('ovrlap')
-%         load([diskPath filesep 'Recall_Task' filesep 'SigRampCellsthatReactivate_alpha0.05.mat'])
-%     end
+    if ~exist('ovrlap')
+        load([diskPath filesep 'Recall_Task' filesep 'SigRampCellsthatReactivate_alpha0.05.mat'])
+    end
     
 elseif strcmp(task, 'Object_Screening')
     load([diskPath filesep 'Object_Screening' filesep 'MergedITCells_500stim_Scrn_SigRamp']); % loads cells with sig ramps
     lbl = 'Viewing';
 end
 
-
-% ovrlap = ~ovrlap;
+ovrlap = ~ovrlap;
 % reactivated cells only
 if exist('ovrlap', 'var')
     strctCells = strctCells(ovrlap);
@@ -45,8 +44,30 @@ if ~exist(taskPath)
     mkdir([taskPath]);
 end
 
+separateSides = false;
 
-%%
+if separateSides
+    left = 1;
+    right = 0;
+    strctCELL = struct2cell(strctCells');
+    strctCELL = strctCELL';
+    
+    if left
+        ITSide = cellfun(@(x) strcmp(x, 'LFFA'), strctCELL(:, 4));        
+    elseif right
+        ITSide = cellfun(@(x) strcmp(x, 'RFFA'), strctCELL(:, 4));
+    end
+    
+    strctCells = strctCells(ITSide);
+    psths = psths(ITSide, :);
+    responses = responses(ITSide, :);
+    if exist('strctResp', 'var')
+        strctResp = strctResp(ITSide);
+    end
+
+end
+
+
 imageIDs = [1:500];
 options.screenType = 'Object';
 
@@ -65,6 +86,8 @@ for cellIndex = 1:length(strctCells)
     cc(cellIndex, :) = returnCorrelationValues(responses{cellIndex, 1}, params, options);
     
 end
+
+mean(cc)
 %% cdf
 e_cdf = 0;
 f = figure;
@@ -129,8 +152,18 @@ lgnd.Position = [0.170982145837375,0.550000001490118,0.291071422610964,0.1107142
 
 end
 
+if separateSides
+    if left && ~right
+        filename = [filename '_left'];
+    elseif right && ~left
+        filename = [filename '_right'];
+    else
+        keyboard
+    end
+end
+
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
-% print(f, filename, '-dpng', '-r0')
+% print(f, filename, '-dpng', '-r300')
 %% histogram of differences between ecdfs of pref and ortho axes
 %% This is basically the whole function. Improve this code
 clear
@@ -183,7 +216,7 @@ for t = 1:2
     
     taskCorr{t} = x_p - x_o;
 end
-%%
+%
 % make figure
 f = figure; 
 hold on
@@ -209,7 +242,7 @@ xlabel('Difference between pref and ortho cdfs');
 ylabel('No of neurons');
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
 filename = [diskPath filesep 'Object_Screening' filesep 'Hist_DiffofCDFs_ViewingandIm'];
-% print(f, filename, '-dpng', '-r0')
+% print(f, filename, '-dpng', '-r300')
 
 %% histogram of different correlations
 f = figure; 
@@ -243,7 +276,7 @@ if exist('ovrlap', 'var')
 
 end
 
-% print(f, filename, '-dpng', '-r0')
+% print(f, filename, '-dpng', '-r300')
 
 
 %% Helpers

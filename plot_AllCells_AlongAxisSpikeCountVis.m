@@ -58,7 +58,8 @@ for ss = 1:length(sessID)
         psths(~resp_ids, :) = [];
         responses(~resp_ids, :) = [];
         strctCells = strctCells(resp_ids);
-        
+        EncodingTimeCourse = EncodingTimeCourse(resp_ids, 1:3);
+        CRTimeCourse = CRTimeCourse(resp_ids, 1:3);
         % load in stimuli
         stimuli = Utilities.readInFiles([sessID{ss} filesep 'stimuliUsedRecall']);
         
@@ -110,7 +111,7 @@ for ss = 1:length(sessID)
             end
             
             if sum(ismember(RC_names, strctCells(cellIndex).Name)) ~= 0 && isequal(strctCells(cellIndex).ChannelNumber, RC_ChanNum(find(ismember(RC_names, strctCells(cellIndex).Name))))
-                pathOut = [pathOut filesep 'ReactivatedCells'];
+                pathOut = [pathOut filesep 'ReactivatedCells_SigRamp'];
                 if ~exist(pathOut, 'dir')
                     mkdir(pathOut)
                 end

@@ -36,7 +36,7 @@ end
 
 sessID = Utilities.sessionListAllTasks('Recall_Task', false);
 % sessID{2} = ['Recall_Task' filesep 'P76CS' filesep 'Recall_Session_2_20210925']; % want the rasters so using recall session
-
+%%
 tic
 strctAllCELLS = {};
 for ss = 1:length(sessID)
@@ -64,6 +64,9 @@ for ss = 1:length(sessID)
         % carving out cells
         if cellType ~= 0            
             validNames = ismember(cellNames, chosenNames);
+            
+%             disp(sum(validNames));
+            
             imRasters = imRasters(validNames, :);
             psths = psths(validNames, :);
             responses = responses(validNames, :); 

@@ -42,18 +42,25 @@ alpha = 0.05;
 im_active_cells = {};
 ctr = 1;
 all_ctr = 1;
-BlineType = 3;
+BlineType = 1;
 
-useCombo = true;
-useAnova = false;
+
+useCombo = false;
+useAnova = true;
 useThreshold = false;
-n_stdDevs = 3;
+n_stdDevs = 5;
+full_strctCELL = {};
+
+includeScreening  = false;
+
 
 for ss = 1:length(sessID)
     tic
-    
+    %     if ss ~= 2
     load([sessID{ss} filesep 'RecallData_NoFreeRec.mat'])
-    
+    if includeScreening
+        load([sessID{ss} filesep 'PsthandResponses.mat']);
+    end
     strctCELL = struct2cell(strctCells')';
     switch BlineType
         case 1
@@ -68,22 +75,45 @@ for ss = 1:length(sessID)
     end
     
     CRTimeCourse = RecallData.CRTimeCourse;
-    
+    EncTimeCourse = RecallData.EncodingTimeCourse;
     if ITOnly
         IT_Cells = cellfun(@(x) strcmp(x, 'RFFA') || strcmp(x, 'LFFA'), strctCELL(:, 4));
-        full_strctCELL = strctCELL;
         strctCELL = strctCELL(IT_Cells, :);
         strctCells = strctCells(IT_Cells);
         
         BTimeCourse = BTimeCourse(IT_Cells, :);
         CRTimeCourse = CRTimeCourse(IT_Cells, :);
+        
+        if exist('responses', 'var')
+            responses = responses(IT_Cells, :);
+            psths = psths(IT_Cells, :);
+            labels_train = order;
+        end
+        
+        EncTimeCourse = RecallData.EncodingTimeCourse(IT_Cells, :);
     end
     
     
+    if exist('labels_train', 'var')
+        % covert train and test labels to match
+        train_files = Utilities.readInFiles([diskPath filesep sessID{ss} filesep 'stimuliUsed'], 'tif');
+        train_files = struct2cell(train_files)';
+        test_files = Utilities.readInFiles([diskPath filesep sessID{ss} filesep 'stimuliUsedRecall'], 'tif');
+        test_files = struct2cell(test_files)';
+        train_files = cellfun(@(x) x(1:end-4), train_files(:, 1), 'UniformOutput', false);
+        test_files = cellfun(@(x) x(1:end-4), test_files(:, 1), 'UniformOutput', false);
+        
+        matched = find(ismember(train_files, test_files) == 1);
+        
+    end
+    
+    full_strctCELL = cat(1, full_strctCELL, strctCELL);
+    
     % concatenate anova and others
+    % does best 37/96, 0.39 and good corr (with bline 3)
     if useCombo
         
-        
+        num_cells(ss) = length(strctCells);
         sigcells = false(1, length(strctCells));
         for cellIndex = l(strctCells)
             cr_psth = CRTimeCourse{cellIndex, 1}(:, RecallData.offsetTones(1):RecallData.offsetTones(1)+5000);
@@ -97,13 +127,55 @@ for ss = 1:length(sessID)
                 im_active_cells = cat(1, im_active_cells, strctCELL(cellIndex, :));
             end
             
+            % for correlation computation
+            if ss == 1
+                idx = cellIndex;
+            else
+                idx = sum(num_cells(1:ss-1)) + cellIndex;
+            end
+            
+            % grab the encoding responses - like in plotPerCellRasterandbarPerStim
+            if exist('responses', 'var') && ~isnan(responses{cellIndex, 2})
+                start_e = RecallData.offsetEnc(1) + floor(responses{cellIndex, 2});
+                till_e = start_e + 500;%RecallData.stimDur*1e3;
+                
+                start_s = floor(responses{cellIndex, 2}) + 170;
+                till_s = start_s + 267;
+                
+            else
+                start_e = RecallData.offsetEnc(1);
+                till_e = start_e + 500;% RecallData.stimDur*1e3;
+                
+                start_s = 170;
+                till_s = start_s + 267;
+                
+            end
+            start_cr = RecallData.offsetTones(1);
+            till_cr = RecallData.offsetTones(1)+5000;
+            for stim = unique(RecallData.EncodingOrder')
+                full_EncResponses{idx, 1}(stim, 1) = mean(mean(EncTimeCourse{cellIndex, 1}(find(RecallData.EncodingOrder == stim), start_e:till_e)))*1e3;
+                full_EncResponses{idx, 2} = strctCells(cellIndex).Name;
+            end
+            if includeScreening
+                ctr_stim = 1;
+                for stim = unique(matched')
+                    full_ScrnResponses{idx, 1}(ctr_stim, 1) = mean(mean(psths{cellIndex, 1}(find(order == stim), start_s:till_s)))*1e3;
+                    ctr_stim = ctr_stim+1;
+                end
+            end
+            for stim = unique(RecallData.CROrder')
+                full_CRResponses{idx, 1}(stim, 1) = mean(mean(CRTimeCourse{cellIndex, 1}(find(RecallData.CROrder == stim), start_cr:till_cr)))*1e3;
+            end
+            
         end
+        
         
         % take other neurons
         strctCells = strctCells(~sigcells);
         strctCELL = strctCELL(~sigcells, :);
         BTimeCourse = BTimeCourse(~sigcells, :);
         CRTimeCourse = CRTimeCourse(~sigcells, :);
+        
         for cellIndex = l(strctCells)
             if useThreshold
                 threshCount = 0;
@@ -120,16 +192,16 @@ for ss = 1:length(sessID)
                         cr_timecourse = mean(cr_psth, 1);
                         max_cr(stim) = max(cr_timecourse);
                         if max(cr_timecourse) > threshold
-%                             threshCount = threshCount + 1;
+                            %                             threshCount = threshCount + 1;
                             
                             im_active_cells = cat(1, im_active_cells, strctCELL(cellIndex, :));
                             break;
                             
                         end
                     end
-%                     if threshCount >= length(unique(CROrder'))/2 || max(max_cr) >  mean(b_timecourse) + (5*std(b_timecourse))
-%                         im_active_cells = cat(1, im_active_cells, strctCELL(cellIndex, :));
-%                     end
+                    %                     if threshCount >= length(unique(CROrder'))/2 || max(max_cr) >  mean(b_timecourse) + (5*std(b_timecourse))
+                    %                         im_active_cells = cat(1, im_active_cells, strctCELL(cellIndex, :));
+                    %                     end
                 else
                     cr_psth = CRTimeCourse{cellIndex, 2}(:, RecallData.offsetTones(1):RecallData.offsetTones(1)+5000);
                     cr_timecourse = mean(cr_psth, 1);
@@ -159,6 +231,10 @@ for ss = 1:length(sessID)
                     
                 end
             end
+            
+            
+            %             full_CRTimeCourse = cat(1, full_CRTimeCourse, CRTimeCourse(cellIndex, :));
+            %             full_EncTimeCourse = cat(1, full_EncTimeCourse, RecallData.EncodingTimeCourse(cellIndex, :)); % grab from reacllData so you can use it with diff baselines
         end
         
         
@@ -168,6 +244,7 @@ for ss = 1:length(sessID)
         % compare to activity in Im across all stim
         % Could also compare to activity in Im per stim (keep cells that have
         % sig act for at  least 1 stim)
+        num_cells(ss) = length(strctCells);
         for cellIndex = l(strctCells)
             
             
@@ -263,14 +340,57 @@ for ss = 1:length(sessID)
                     ctr = ctr + 1;
                 end
                 
+                
+                % for correlation computation
+                if ss == 1
+                    idx = cellIndex;
+                else
+                    idx = sum(num_cells(1:ss-1)) + cellIndex;
+                end
+                % grab the encoding responses - like in plotPerCellRasterandbarPerStim
+                if exist('responses', 'var') && ~isnan(responses{cellIndex, 2})
+                    start_e = RecallData.offsetEnc(1) + floor(responses{cellIndex, 2});
+                    till_e = start_e + 500;%RecallData.stimDur*1e3;
+                    
+                    start_s = floor(responses{cellIndex, 2}) + 170;
+                    till_s = start_s + 267;
+                    
+                else
+                    start_e = RecallData.offsetEnc(1);
+                    till_e = start_e + 500;% RecallData.stimDur*1e3;
+                    
+                    start_s = 170;
+                    till_s = start_s + 267;
+                    
+                end
+                start_cr = RecallData.offsetTones(1);
+                till_cr = RecallData.offsetTones(1)+5000;
+                for stim = unique(RecallData.EncodingOrder')
+                    full_EncResponses{idx, 1}(stim, 1) = mean(mean(EncTimeCourse{cellIndex, 1}(find(RecallData.EncodingOrder == stim), start_e:till_e)))*1e3;
+                    full_EncResponses{idx, 2} = strctCells(cellIndex).Name;
+                end
+                if includeScreening
+                    ctr_stim = 1;
+                    for stim = unique(matched')
+                        full_ScrnResponses{idx, 1}(ctr_stim, 1) = mean(mean(psths{cellIndex, 1}(find(order == stim), start_s:till_s)))*1e3;
+                        ctr_stim = ctr_stim+1;
+                    end
+                end
+                for stim = unique(RecallData.CROrder')
+                    full_CRResponses{idx, 1}(stim, 1) = mean(mean(CRTimeCourse{cellIndex, 1}(find(RecallData.CROrder == stim), start_cr:till_cr)))*1e3;
+                end
             end
         end
+        
     end
+    
     fprintf('Finished for session %d', ss)
     fprintf('\n')
     toc
+    %     end
     
 end
+full_strctCells = cell2struct(full_strctCELL, fieldnames(strctCells), 2);
 
 % if iscell(pvals)
 %     min_p = cell2mat(cellfun(@(x) min(x), pvals(:, 1), 'UniformOutput', false));
@@ -304,19 +424,96 @@ for i = 1:length(ovrlap)
     
 end
 
-strctCells = strctCells(ovrlap);
-responses = responses(ovrlap, :);
-psths = psths(ovrlap, :);
+% strctCells = strctCells(ovrlap);
+% responses = responses(ovrlap, :);
+% psths = psths(ovrlap, :);
+%
+% if useCombo save([diskPath filesep task filesep ['SigRampCellsthatReactivate_alpha' num2str(alpha) '_Combo.mat']], 'ovrlap');
+%     save([diskPath filesep task filesep ['ReactiveITCells_alpha' num2str(alpha) '_500Stim_Im_SigRamp_Combo.mat']], 'strctCells', 'responses', 'psths');
+%
+%
+% else
+%     save([diskPath filesep task filesep ['SigRampCellsthatReactivate_alpha' num2str(alpha) '.mat']], 'ovrlap');
+%     save([diskPath filesep task filesep ['ReactiveITCells_alpha' num2str(alpha) '_500Stim_Im_SigRamp.mat']], 'strctCells', 'responses', 'psths');
+%
+% end
 
-if useCombo save([diskPath filesep task filesep ['SigRampCellsthatReactivate_alpha' num2str(alpha) '_Combo.mat']], 'ovrlap');
-    save([diskPath filesep task filesep ['ReactiveITCells_alpha' num2str(alpha) '_500Stim_Im_SigRamp_Combo.mat']], 'strctCells', 'responses', 'psths');
+%% pulling out various combinations of cells
+full_names = [cell2mat(full_strctCELL(:, 1)) cell2mat(full_strctCELL(:, 2))];
 
-   
-else
-    save([diskPath filesep task filesep ['SigRampCellsthatReactivate_alpha' num2str(alpha) '.mat']], 'ovrlap');
-    save([diskPath filesep task filesep ['ReactiveITCells_alpha' num2str(alpha) '_500Stim_Im_SigRamp.mat']], 'strctCells', 'responses', 'psths');
+% axis tuned neurons
+load([diskPath filesep task filesep 'AllITCells_500Stim_Im_SigRamp.mat'])
+sigramp_names = [cat(1, strctCells(:).Name), cat(1, strctCells(:).ChannelNumber)];
+
+% which cells did both
+ovrlap_ax = ismember(full_names(:, 1), sigramp_names(:, 1));
+% make sure channel numbers are the same too
+for i = 1:length(ovrlap_ax)
+    
+    if ovrlap_ax(i) == 1
+        rel_idx = find(sigramp_names(:, 1) == full_names(i, 1));
+        
+        if ~isequal(full_names(i, 2), sigramp_names(rel_idx, 2))
+            ovrlap_ax(i) = false;
+        end
+    end
     
 end
+
+
+
+% responsive neurons
+load([diskPath filesep task filesep 'AllRespITCells_500Stim_Im.mat'])
+R_strctCELL = struct2cell(strctCells')';
+resp_names = [cell2mat(R_strctCELL(:, 1)) cell2mat(R_strctCELL(:, 2))];
+
+% which cells did both
+ovrlap_resp = ismember(full_names(:, 1), resp_names(:, 1));
+% make sure channel numbers are the same too
+for i = 1:length(ovrlap_resp)
+    
+    if ovrlap_resp(i) == 1
+        rel_idx = find(resp_names(:, 1) == full_names(i, 1));
+        
+        if ~isequal(full_names(i, 2), resp_names(rel_idx, 2))
+            ovrlap_resp(i) = false;
+        end
+    end
+    
+end
+
+% reactive neurons
+if ~manual_curation
+    reac_names = [cell2mat(im_active_cells(:, 1)) cell2mat(im_active_cells(:, 2))];
+else
+    reac_names = RC_nm;
+end
+% which cells did both
+ovrlap = ismember(full_names(:, 1), reac_names(:, 1));
+% make sure channel numbers are the same too
+for i = 1:length(ovrlap)
+    
+    if ovrlap(i) == 1
+        rel_idx = find(reac_names(:, 1) == full_names(i, 1));
+        
+        if ~isequal(full_names(i, 2), reac_names(rel_idx, 2))
+            ovrlap(i) = false;
+        end
+    end
+    
+end
+
+if includeScreening
+    reacData = table(full_names(:, 1), full_names(:, 2), cc_all', cc_all_s', ovrlap, ovrlap_resp, ovrlap_ax);
+    reacData.Properties.VariableNames = {'Name', 'Channel', 'encCorr','scrnCorr','reactivated', 'responsive', 'axisTuned'};
+    % save([diskPath filesep task filesep 'ReactivationCorrelationData_PerStimBaseThresh_wScrn' num2str(0.05) '.mat'], 'reacData');
+else
+    reacData = table(full_names(:, 1), full_names(:, 2), cc_all', ovrlap, ovrlap_resp, ovrlap_ax);
+    reacData.Properties.VariableNames = {'Name', 'Channel', 'encCorr','reactivated', 'responsive', 'axisTuned'};
+    % save([diskPath filesep task filesep 'ReactivationCorrelationData_PerStimBaseThresh' num2str(0.05) '.mat'], 'reacData');
+    
+end
+reacData = sortrows(reacData, 'encCorr', 'descend');
 %%
 % load([diskPath filesep task filesep 'AllITCells_500Stim_Im_SigRamp.mat'])
 % sigramp_names = [cat(1, strctCells(:).Name), cat(1, strctCells(:).ChannelNumber)];

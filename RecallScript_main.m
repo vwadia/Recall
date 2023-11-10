@@ -1,4 +1,4 @@
-
+`
 
 %% Recall script
 % same vein as AIC script
@@ -37,10 +37,10 @@ paths.basePath = diskPath;
 % paths.sessPath = 'Recall_Session_2_20210925';
 % paths.sessPath = 'ReScreenRecall_Session_3_20210927';
 
-% paths.patientPath = 'P79CS';
+paths.patientPath = 'P79CS';
 % paths.sessPath = 'ReScreenRecall_Session_1_20220330';
 % paths.sessPath = 'ReScreenRecall_Session_2_20220403';
-% paths.sessPath = 'ReScreenRecall_Session_3_20220405';
+paths.sessPath = 'ReScreenRecall_Session_3_20220405';
 
 % paths.patientPath = 'P80CS';
 % paths.sessPath = 'ReScreenRecall_Session_1_20220728';
@@ -50,8 +50,8 @@ paths.basePath = diskPath;
 % paths.sessPath = 'ReScreenRecall_Session_1_20230406';
 % paths.sessPath = 'ReScreenRecall_Session_2_20230408';
 
-paths.patientPath = 'P85CS';
-paths.sessPath = 'ReScreenRecall_Session_1_20230424';
+% paths.patientPath = 'P85CS';
+% paths.sessPath = 'ReScreenRecall_Session_1_20230424';
 
 
 paths.rawPath = 'raw'; 
@@ -228,7 +228,7 @@ RecallData.offsetEnc = [1500 500];
 RecallData.CR_numRepetitions = length(RecallData.CROrder)/length(unique(RecallData.CROrder));
 RecallData.Enc_numRepetitions = length(RecallData.EncodingOrder)/length(unique(RecallData.EncodingOrder));
 %%
-bin_size = 200; % ms - for smoothing
+bin_size = 500; % ms - for smoothing
 use_both_offsets = 1;
 order = 1;
 % carve up rasters for encoding, CR and FR - 496s for P71 Session 2
@@ -281,37 +281,9 @@ keyboard % safety in case it doesn't enter script for whatever reason
 % image
 % save([paths.basePath filesep paths.taskPath filesep paths.patientPath filesep paths.sessPath filesep 'RecallData_NoFReeRec.mat'], 'RecallData', 'strctCells', '-v7.3')
 
-%% collecting population responses - free recall
 
- RecallData.perCellAllStimFR = cell(length(strctCells), 3);
- RecallData.order_perCellAllStimFR = repelem(1:length(RecallData.stimuli), RecallData.FR_numRepetitions)';
-% per cell all stim
-for rep = 1:length(strctCells)
-    for stim = 1:length(RecallData.stimuli)
-        RecallData.perCellAllStimFR{rep, 1} = [RecallData.perCellAllStimFR{rep, 1}; RecallData.FREventTimeCourse{stim, 1}{rep, 1}(:, 1:sum(RecallData.offsetFR))];
-        RecallData.perCellAllStimFR{rep, 2} = [RecallData.perCellAllStimFR{rep, 2}; RecallData.FREventTimeCourse{stim, 1}{rep, 2}(:, 1:sum(RecallData.offsetFR))];
-        if stim == 1 
-            RecallData.perCellAllStimFR{rep, 3} = [RecallData.perCellAllStimFR{rep, 3}; RecallData.FREventTimeCourse{stim, 1}{rep, 3}(:, 1:sum(RecallData.offsetFR))];
-        end
-    end
-end
-
-RecallData.perStimAllCellsFR = cell(length(RecallData.stimuli), 3);
-RecallData.order_perStimAllCellsFR = repelem(1:length(strctCells), RecallData.FR_numRepetitions)';
-
-% per stim all cells
-for stim = 1:length(RecallData.stimuli)
-    for rep = 1:length(strctCells)
-        RecallData.perStimAllCellsFR{stim, 1} = [RecallData.perStimAllCellsFR{stim, 1}; RecallData.FREventTimeCourse{stim, 1}{rep, 1}(:, 1:sum(RecallData.offsetFR))];
-        RecallData.perStimAllCellsFR{stim, 2} = [RecallData.perStimAllCellsFR{stim, 2}; RecallData.FREventTimeCourse{stim, 1}{rep, 2}(:, 1:sum(RecallData.offsetFR))];
-        if rep == 1
-            RecallData.perStimAllCellsFR{stim, 3} = [RecallData.perStimAllCellsFR{stim, 3}; RecallData.FREventTimeCourse{stim, 1}{rep, 3}(:, 1:sum(RecallData.offsetFR))];
-            
-        end
-    end
-end
-% collect population responses 
-
+%% collect population responses CR and encoding
+tic
 % CR
 RecallData.perStimAllCellsCR = cell(length(RecallData.stimuli), 3);
 RecallData.order_perStimAllCellsCR = repelem(1:length(strctCells), RecallData.CR_numRepetitions)';
@@ -354,8 +326,36 @@ for stim = 1:length(RecallData.stimuli)
         end
     end
 end
+toc
+%% collecting population responses - free recall
 
+ RecallData.perCellAllStimFR = cell(length(strctCells), 3);
+ RecallData.order_perCellAllStimFR = repelem(1:length(RecallData.stimuli), RecallData.FR_numRepetitions)';
+% per cell all stim
+for rep = 1:length(strctCells)
+    for stim = 1:length(RecallData.stimuli)
+        RecallData.perCellAllStimFR{rep, 1} = [RecallData.perCellAllStimFR{rep, 1}; RecallData.FREventTimeCourse{stim, 1}{rep, 1}(:, 1:sum(RecallData.offsetFR))];
+        RecallData.perCellAllStimFR{rep, 2} = [RecallData.perCellAllStimFR{rep, 2}; RecallData.FREventTimeCourse{stim, 1}{rep, 2}(:, 1:sum(RecallData.offsetFR))];
+        if stim == 1 
+            RecallData.perCellAllStimFR{rep, 3} = [RecallData.perCellAllStimFR{rep, 3}; RecallData.FREventTimeCourse{stim, 1}{rep, 3}(:, 1:sum(RecallData.offsetFR))];
+        end
+    end
+end
 
+RecallData.perStimAllCellsFR = cell(length(RecallData.stimuli), 3);
+RecallData.order_perStimAllCellsFR = repelem(1:length(strctCells), RecallData.FR_numRepetitions)';
+
+% per stim all cells
+for stim = 1:length(RecallData.stimuli)
+    for rep = 1:length(strctCells)
+        RecallData.perStimAllCellsFR{stim, 1} = [RecallData.perStimAllCellsFR{stim, 1}; RecallData.FREventTimeCourse{stim, 1}{rep, 1}(:, 1:sum(RecallData.offsetFR))];
+        RecallData.perStimAllCellsFR{stim, 2} = [RecallData.perStimAllCellsFR{stim, 2}; RecallData.FREventTimeCourse{stim, 1}{rep, 2}(:, 1:sum(RecallData.offsetFR))];
+        if rep == 1
+            RecallData.perStimAllCellsFR{stim, 3} = [RecallData.perStimAllCellsFR{stim, 3}; RecallData.FREventTimeCourse{stim, 1}{rep, 3}(:, 1:sum(RecallData.offsetFR))];
+            
+        end
+    end
+end
 
 %% Full trial FR
 strctCELL = struct2cell(strctCells');
