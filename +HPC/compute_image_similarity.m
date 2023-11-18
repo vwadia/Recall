@@ -44,7 +44,7 @@ end
 
 
 fnum = sprintf('%03d', cpu_nr);
-filename = [outPath filesep 'SSIMVals_Images_' num2str(n_image_start) '_to_' num2str(n_image_start) '_worker_' fnum];
+filename = [outPath filesep 'SSIMVals_Images_' num2str(n_image_start) '_to_' num2str(n_image_end) '_worker_' fnum];
 disp(filename)
 save(filename, 'ssimVals_imIDs');
 

@@ -19,7 +19,10 @@ if strcmp(task, 'Recall_Task')
     lbl = 'Imagination';
     
     if ~exist('ovrlap')
-        load([diskPath filesep 'Recall_Task' filesep 'SigRampCellsthatReactivate_alpha0.05.mat'])
+%         load([diskPath filesep 'Recall_Task' filesep 'SigRampCellsthatReactivate_alpha0.05.mat'])
+        load([diskPath filesep 'Recall_Task' filesep 'ReacDataPoisson_3ReacTrPerStim_MinSPB5.mat'])
+        reacData = reacData(reacData.axisTuned, :);
+        ovrlap = reacData.reactivated;
     end
     
 elseif strcmp(task, 'Object_Screening')
@@ -27,7 +30,7 @@ elseif strcmp(task, 'Object_Screening')
     lbl = 'Viewing';
 end
 
-ovrlap = ~ovrlap;
+% ovrlap = ~ovrlap;
 % reactivated cells only
 if exist('ovrlap', 'var')
     strctCells = strctCells(ovrlap);
@@ -97,7 +100,7 @@ if e_cdf
     % % ecdf with bounds - try to make this work
     e1 = ecdf(cc(:, 2), 'Bounds', 'on'); % ortho
     e2 = ecdf(cc(:, 1), 'Bounds', 'on');% pref
-    grid on
+%     grid on
 %     plot(e1, x1, 'LineWidth', 2);
 %     plot(e2, x2, 'LineWidth', 2);
     
@@ -106,9 +109,13 @@ else
     cd2 = cdfplot(cc(:, 1));
     cd1.LineWidth = 2;
     cd2.LineWidth = 2;
+    cd1.Color = [0 0.6 0];
+    cd2.Color = [0.9 0.4 0];
 
     [c_p, x_p, ~, ~, ~] = cdfcalc(cc(:, 1));
     [c_o, x_o, ~, ~, ~] = cdfcalc(cc(:, 2));
+    
+    grid off
 end
 
 [h, p] = kstest2(cc(:, 1), cc(:, 2));
@@ -162,6 +169,7 @@ if separateSides
     end
 end
 
+% filename = [filename '_PoissonforPoster'];
 set(gca, 'FontSize', 14, 'FontWeight', 'bold');
 % print(f, filename, '-dpng', '-r300')
 %% histogram of differences between ecdfs of pref and ortho axes
