@@ -29,7 +29,7 @@ for ctr = n_image_start:n_image_end
     for ctr2 = 1:size(im2all_woStim, 3)
         comp = im2all_woStim(:, :, ctr2);
 %         simVal(ctr2) = ssim(targ, comp); 
-        simVal(ctr2) = multssim(targ, comp); multsim = true;
+        simVal(ctr2) = multissim(targ, comp); multsim = true;
         
     end
     ssimVals_imIDs{ctr} = simVal;
