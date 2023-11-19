@@ -16,8 +16,7 @@ load(fname)
 
 
 bigSetIds = 1:size(im2all_woStim, 3);
-
-% ssimVals_imIDs = cell(length(imageIDs), 1);
+multsim = false; % did I use vanilla struct sim or multistructsim?
 
 % hard coded numbers - im set is 17856, # of workers is 31 and 17856/31 = 576
 n_image_start = (576*(cpu_nr-1))+1; 
@@ -29,7 +28,8 @@ for ctr = n_image_start:n_image_end
     simVal = nan(1, size(im2all_woStim, 3));
     for ctr2 = 1:size(im2all_woStim, 3)
         comp = im2all_woStim(:, :, ctr2);
-        simVal(ctr2) = ssim(targ, comp); 
+%         simVal(ctr2) = ssim(targ, comp); 
+        simVal(ctr2) = multssim(targ, comp); multsim = true;
         
     end
     ssimVals_imIDs{ctr} = simVal;
@@ -44,7 +44,11 @@ end
 
 
 fnum = sprintf('%03d', cpu_nr);
-filename = [outPath filesep 'SSIMVals_Images_' num2str(n_image_start) '_to_' num2str(n_image_end) '_worker_' fnum];
+if multsim
+    filename = [outPath filesep 'MultSSIMVals_worker_' fnum '_Images_' num2str(n_image_start) '_to_' num2str(n_image_end)];
+else
+    filename = [outPath filesep 'SSIMVals_worker_' fnum '_Images_' num2str(n_image_start) '_to_' num2str(n_image_end)];
+end
 disp(filename)
 save(filename, 'ssimVals_imIDs');
 
